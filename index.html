@@ -1,0 +1,2566 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>专业AI医生诊断游戏 v2.6 · 加量版</title>
+    <script src="https://cdn.tailwindcss.com">
+    </script>
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#165DFF',
+                        secondary: '#36BFFA',
+                        accent: '#FF7D00',
+                        success: '#00B42A',
+                        danger: '#F53F3F',
+                        neutral: '#86909C',
+                        light: '#F2F3F5',
+                        dark: '#1D2129'
+                    },
+                }
+            }
+        }
+    </script>
+    <style>
+        .card-hover {
+            transition: all 0.3s ease;
+        }
+        .card-hover:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+        }
+        .animate-fade-in {
+            animation: fadeIn 0.5s ease-in-out;
+        }
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        .doctor-bubble {
+            background: #e6f7ff;
+            border-radius: 18px 18px 18px 0;
+        }
+        .patient-bubble {
+            background: #f6ffed;
+            border-radius: 18px 18px 0 18px;
+        }
+        .drug-card {
+            border-left: 4px solid #165DFF;
+        }
+        .drug-card:hover {
+            background: #f0f7ff;
+        }
+        .prescription-tag {
+            background: #e8f5e9;
+            color: #2e7d32;
+            padding: 2px 10px;
+            border-radius: 12px;
+            font-size: 0.75rem;
+        }
+        .report-card {
+            background: #fafffe;
+            border: 1px solid #d0e8e0;
+            border-radius: 8px;
+            padding: 12px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.85rem;
+        }
+        .report-card .normal {
+            color: #2e7d32;
+        }
+        .report-card .abnormal {
+            color: #c62828;
+        }
+        .report-card .hint-box {
+            background: #fff8e1;
+            border-left: 4px solid #ff9800;
+            padding: 8px 12px;
+            margin-top: 8px;
+            border-radius: 4px;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            font-size: 0.8rem;
+            color: #4a4a4a;
+        }
+        .quick-action-btn {
+            cursor: pointer;
+            user-select: none;
+        }
+        .quick-action-btn:active {
+            transform: scale(0.96);
+        }
+        .test-item {
+            transition: all 0.2s;
+        }
+        .test-item:hover {
+            background: #f0f7ff;
+            transform: translateX(4px);
+        }
+        .diagnosis-btn {
+            background: linear-gradient(135deg, #FF7D00, #FF5500);
+            color: white;
+            font-weight: 700;
+            padding: 10px 24px;
+            border-radius: 12px;
+            transition: all 0.3s;
+        }
+        .diagnosis-btn:hover {
+            transform: scale(1.03);
+            box-shadow: 0 4px 15px rgba(255, 85, 0, 0.4);
+        }
+        .hint-btn {
+            background: #e8f0fe;
+            color: #1a56db;
+            border: 1px solid #1a56db33;
+        }
+        .hint-btn:hover {
+            background: #d0e0ff;
+        }
+        .visit-tag {
+            padding: 2px 12px;
+            border-radius: 20px;
+            font-size: 0.7rem;
+            font-weight: 600;
+        }
+        .visit-tag.initial {
+            background: #e3f2fd;
+            color: #0d47a1;
+        }
+        .visit-tag.followup {
+            background: #fff3e0;
+            color: #e65100;
+        }
+        .bg-success {
+            background-color: #00B42A;
+        }
+        .bg-success\/10 {
+            background-color: rgba(0, 180, 42, 0.1);
+        }
+        .text-success {
+            color: #00B42A;
+        }
+        .border-success {
+            border-color: #00B42A;
+        }
+        .bg-accent {
+            background-color: #FF7D00;
+        }
+        .bg-accent\/10 {
+            background-color: rgba(255, 125, 0, 0.1);
+        }
+        .text-accent {
+            color: #FF7D00;
+        }
+        .border-accent {
+            border-color: #FF7D00;
+        }
+        .bg-danger {
+            background-color: #F53F3F;
+        }
+        .bg-danger\/10 {
+            background-color: rgba(245, 63, 63, 0.1);
+        }
+        .text-danger {
+            color: #F53F3F;
+        }
+        .bg-light {
+            background-color: #F2F3F5;
+        }
+        #chat-container::-webkit-scrollbar {
+            width: 6px;
+        }
+        #chat-container::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 3px;
+        }
+        #chat-container::-webkit-scrollbar-thumb {
+            background: #ccc;
+            border-radius: 3px;
+        }
+        #chat-container::-webkit-scrollbar-thumb:hover {
+            background: #aaa;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen font-sans">
+    <div class="max-w-6xl mx-auto px-4 py-8">
+        <header class="text-center mb-10 animate-fade-in">
+            <h1 class="text-[clamp(2rem,5vw,3rem)] font-bold text-primary mb-2">
+                <i class="fa fa-heartbeat mr-3"></i>专业AI医生诊断游戏 v2.6
+            </h1>
+            <p class="text-gray-600 text-lg">🤖 AI驱动 · 真实对话 · 智能检查 · 精准处方</p>
+        </header>
+
+        <main class="bg-white rounded-xl shadow-lg p-6 md:p-8 mb-10 min-h-[500px]">
+            <!-- ===== 欢迎界面 ===== -->
+            <div id="welcome-screen" class="text-center py-10 animate-fade-in">
+                <div class="mb-8">
+                    <i class="fa fa-stethoscope text-8xl text-primary/80 mb-4"></i>
+                    <p class="text-gray-600 text-lg mb-4">
+                        接入AI大模型，实现真实医疗对话<br>
+                        两种模式自由切换，挑战诊断与误导能力
+                    </p>
+                    <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4 max-w-lg mx-auto mb-6 text-left text-sm">
+                        <p class="font-semibold text-yellow-800">⚙️ 使用前配置：</p>
+                        <p class="text-gray-600">1. 输入您的API密钥</p>
+                        <p class="text-gray-600">2. 选择角色开始游戏</p>
+                        <p class="text-gray-600">3. AI将根据您的角色进行真实对话</p>
+                    </div>
+                    <div class="max-w-md mx-auto">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">API 密钥</label>
+                        <input type="password" id="api-key-input" class="w-full border border-gray-300 rounded-lg px-4 py-2 mb-4 focus:ring-2 focus:ring-primary focus:border-transparent" placeholder="sk-...">
+                        <button id="start-btn" class="bg-primary hover:bg-primary/90 text-white font-bold py-3 px-8 rounded-full text-lg transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-1">
+                            开始游戏 <i class="fa fa-play ml-2"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ===== 模式选择 ===== -->
+            <div id="mode-select" class="hidden animate-fade-in">
+                <h2 class="text-2xl font-bold text-center mb-8 text-primary">选择角色</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-2xl mx-auto">
+                    <button id="doctor-mode-btn" class="card-hover bg-white border-2 border-primary/30 hover:border-primary rounded-lg p-8 text-center">
+                        <div class="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center text-primary mx-auto mb-4">
+                            <i class="fa fa-user-md text-3xl"></i>
+                        </div>
+                        <h3 class="font-bold text-2xl mb-2">👨‍⚕️ 医生模式</h3>
+                        <p class="text-gray-600">你扮演医生，AI扮演患者<br>通过对话诊断疾病并开处方</p>
+                        <span class="inline-block mt-3 text-sm bg-primary/10 text-primary px-3 py-1 rounded-full">AI患者</span>
+                    </button>
+                    <button id="patient-mode-btn" class="card-hover bg-white border-2 border-secondary/30 hover:border-secondary rounded-lg p-8 text-center">
+                        <div class="w-20 h-20 rounded-full bg-secondary/10 flex items-center justify-center text-secondary mx-auto mb-4">
+                            <i class="fa fa-user text-3xl"></i>
+                        </div>
+                        <h3 class="font-bold text-2xl mb-2">🧑‍⚕️ 患者模式</h3>
+                        <p class="text-gray-600">你扮演患者，AI扮演医生<br>回答问诊问题，尝试迷惑AI</p>
+                        <span class="inline-block mt-3 text-sm bg-secondary/10 text-secondary px-3 py-1 rounded-full">AI医生</span>
+                    </button>
+                </div>
+                <div class="mt-8 text-center">
+                    <button id="back-from-mode-btn" class="bg-gray-200 hover:bg-gray-300 text-gray-700 font-medium py-2 px-6 rounded-full transition-all duration-300">
+                        <i class="fa fa-arrow-left mr-2"></i> 返回
+                    </button>
+                </div>
+            </div>
+
+            <!-- ===== 医生模式 - 难度选择 ===== -->
+            <div id="doctor-difficulty-select" class="hidden animate-fade-in">
+                <h2 class="text-2xl font-bold text-center mb-8 text-primary">选择难度</h2>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-3xl mx-auto">
+                    <button class="difficulty-btn card-hover bg-white border border-gray-200 rounded-lg p-6 text-center" data-level="初级" data-mode="doctor">
+                        <div class="w-16 h-16 rounded-full bg-success/10 flex items-center justify-center text-success mx-auto mb-4">
+                            <i class="fa fa-child text-2xl"></i>
+                        </div>
+                        <h3 class="font-bold text-xl mb-2">初级</h3>
+                        <p class="text-gray-600">常见疾病，症状明显</p>
+                    </button>
+                    <button class="difficulty-btn card-hover bg-white border border-gray-200 rounded-lg p-6 text-center" data-level="中级" data-mode="doctor">
+                        <div class="w-16 h-16 rounded-full bg-accent/10 flex items-center justify-center text-accent mx-auto mb-4">
+                            <i class="fa fa-user text-2xl"></i>
+                        </div>
+                        <h3 class="font-bold text-xl mb-2">中级</h3>
+                        <p class="text-gray-600">中等复杂疾病</p>
+                    </button>
+                    <button class="difficulty-btn card-hover bg-white border border-gray-200 rounded-lg p-6 text-center" data-level="高级" data-mode="doctor">
+                        <div class="w-16 h-16 rounded-full bg-danger/10 flex items-center justify-center text-danger mx-auto mb-4">
+                            <i class="fa fa-user-md text-2xl"></i>
+                        </div>
+                        <h3 class="font-bold text-xl mb-2">高级</h3>
+                        <p class="text-gray-600">疑难重症，诊断难度大</p>
+                    </button>
+                </div>
+                <div class="mt-8 text-center">
+                    <button id="back-to-mode-from-doctor-difficulty-btn" class="bg-gray-200 hover:bg-gray-300 text-gray-700 font-medium py-2 px-6 rounded-full transition-all duration-300">
+                        <i class="fa fa-arrow-left mr-2"></i> 返回
+                    </button>
+                </div>
+            </div>
+
+            <!-- ===== 患者模式 - 难度选择 ===== -->
+            <div id="patient-difficulty-select" class="hidden animate-fade-in">
+                <h2 class="text-2xl font-bold text-center mb-8 text-secondary">选择难度</h2>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-3xl mx-auto">
+                    <button class="difficulty-btn card-hover bg-white border border-gray-200 rounded-lg p-6 text-center" data-level="初级" data-mode="patient">
+                        <div class="w-16 h-16 rounded-full bg-success/10 flex items-center justify-center text-success mx-auto mb-4">
+                            <i class="fa fa-child text-2xl"></i>
+                        </div>
+                        <h3 class="font-bold text-xl mb-2">初级</h3>
+                        <p class="text-gray-600">AI医生水平较低</p>
+                    </button>
+                    <button class="difficulty-btn card-hover bg-white border border-gray-200 rounded-lg p-6 text-center" data-level="中级" data-mode="patient">
+                        <div class="w-16 h-16 rounded-full bg-accent/10 flex items-center justify-center text-accent mx-auto mb-4">
+                            <i class="fa fa-user text-2xl"></i>
+                        </div>
+                        <h3 class="font-bold text-xl mb-2">中级</h3>
+                        <p class="text-gray-600">AI医生水平中等</p>
+                    </button>
+                    <button class="difficulty-btn card-hover bg-white border border-gray-200 rounded-lg p-6 text-center" data-level="高级" data-mode="patient">
+                        <div class="w-16 h-16 rounded-full bg-danger/10 flex items-center justify-center text-danger mx-auto mb-4">
+                            <i class="fa fa-user-md text-2xl"></i>
+                        </div>
+                        <h3 class="font-bold text-xl mb-2">高级</h3>
+                        <p class="text-gray-600">AI医生水平较高</p>
+                    </button>
+                </div>
+                <div class="mt-8 text-center">
+                    <button id="back-to-mode-from-patient-difficulty-btn" class="bg-gray-200 hover:bg-gray-300 text-gray-700 font-medium py-2 px-6 rounded-full transition-all duration-300">
+                        <i class="fa fa-arrow-left mr-2"></i> 返回
+                    </button>
+                </div>
+            </div>
+
+            <!-- ===== 初诊/复诊选择 ===== -->
+            <div id="visit-type-select" class="hidden animate-fade-in">
+                <h2 class="text-2xl font-bold text-center mb-8 text-primary">就诊类型</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-2xl mx-auto">
+                    <button id="initial-visit-btn" class="card-hover bg-white border-2 border-success/30 hover:border-success rounded-lg p-8 text-center">
+                        <div class="w-20 h-20 rounded-full bg-success/10 flex items-center justify-center text-success mx-auto mb-4">
+                            <i class="fa fa-user-plus text-3xl"></i>
+                        </div>
+                        <h3 class="font-bold text-2xl mb-2">🆕 初诊</h3>
+                        <p class="text-gray-600">患者首次就诊<br>AI将详细询问病史</p>
+                        <span class="inline-block mt-3 text-sm bg-success/10 text-success px-3 py-1 rounded-full visit-tag initial">首次就诊</span>
+                    </button>
+                    <button id="followup-visit-btn" class="card-hover bg-white border-2 border-accent/30 hover:border-accent rounded-lg p-8 text-center">
+                        <div class="w-20 h-20 rounded-full bg-accent/10 flex items-center justify-center text-accent mx-auto mb-4">
+                            <i class="fa fa-refresh text-3xl"></i>
+                        </div>
+                        <h3 class="font-bold text-2xl mb-2">📋 复诊</h3>
+                        <p class="text-gray-600">患者再次就诊<br>AI将关注病情变化</p>
+                        <span class="inline-block mt-3 text-sm bg-accent/10 text-accent px-3 py-1 rounded-full visit-tag followup">复诊</span>
+                    </button>
+                </div>
+                <div class="mt-8 text-center">
+                    <button id="back-to-difficulty-btn" class="bg-gray-200 hover:bg-gray-300 text-gray-700 font-medium py-2 px-6 rounded-full transition-all duration-300">
+                        <i class="fa fa-arrow-left mr-2"></i> 返回
+                    </button>
+                </div>
+            </div>
+
+            <!-- ===== 医生模式 - 游戏信息 ===== -->
+            <div id="doctor-game-info" class="hidden animate-fade-in">
+                <h2 class="text-2xl font-bold text-center mb-6 text-primary">👨‍⚕️ 医生模式 - 准备诊断</h2>
+                <div class="bg-light rounded-lg p-6 mb-8 max-w-2xl mx-auto">
+                    <h3 class="font-bold text-lg mb-3">📋 病例信息：</h3>
+                    <div id="doctor-disease-details" class="space-y-3">
+                        <p><span class="font-semibold">疾病分类：</span> <span id="doctor-disease-category" class="text-primary">未知</span></p>
+                        <p><span class="font-semibold">难度：</span> <span id="doctor-difficulty-display" class="text-accent">初级</span></p>
+                        <p><span class="font-semibold">就诊类型：</span> <span id="doctor-visit-display" class="text-success">初诊</span></p>
+                        <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mt-4">
+                            <p class="text-sm text-blue-800">💡 AI将扮演患者，通过真实对话描述症状。<br>你可以要求检查、开处方，最后点击「💊 做出诊断」提交你的判断。</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="text-center">
+                    <button id="start-doctor-game-btn" class="bg-primary hover:bg-primary/90 text-white font-bold py-3 px-8 rounded-full text-lg transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-1">
+                        🚀 开始问诊
+                    </button>
+                </div>
+            </div>
+
+            <!-- ===== 患者模式 - 游戏信息 ===== -->
+            <div id="patient-game-info" class="hidden animate-fade-in">
+                <h2 class="text-2xl font-bold text-center mb-6 text-secondary">🧑‍⚕️ 患者模式 - 准备扮演</h2>
+                <div class="bg-light rounded-lg p-6 mb-8 max-w-2xl mx-auto">
+                    <h3 class="font-bold text-lg mb-3">📋 你的角色：</h3>
+                    <div id="patient-disease-details" class="space-y-3">
+                        <p><span class="font-semibold">患有疾病：</span> <span id="patient-disease-name" class="text-danger">未知</span></p>
+                        <p><span class="font-semibold">疾病分类：</span> <span id="patient-disease-category" class="text-primary">未知</span></p>
+                        <p><span class="font-semibold">难度：</span> <span id="patient-difficulty-display" class="text-accent">初级</span></p>
+                        <p><span class="font-semibold">就诊类型：</span> <span id="patient-visit-display" class="text-success">初诊</span></p>
+                        <div class="bg-green-50 border border-green-200 rounded-lg p-4 mt-4">
+                            <p class="text-sm text-green-800">💡 AI将扮演医生向你问诊。<br>你只需要<strong>回答</strong>医生的问题，并尝试误导AI做出错误诊断！</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="text-center">
+                    <button id="start-patient-game-btn" class="bg-secondary hover:bg-secondary/90 text-white font-bold py-3 px-8 rounded-full text-lg transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-1">
+                        🚀 开始扮演
+                    </button>
+                </div>
+            </div>
+
+            <!-- ===== 游戏主界面 ===== -->
+            <div id="game-screen" class="hidden animate-fade-in">
+                <div class="flex items-center justify-between mb-6 flex-wrap gap-2">
+                    <div>
+                        <span id="game-mode-badge" class="bg-primary/10 text-primary px-3 py-1 rounded-full text-sm">医生模式</span>
+                        <span id="game-difficulty-badge" class="bg-accent/10 text-accent px-3 py-1 rounded-full text-sm ml-2">初级</span>
+                        <span id="game-visit-badge" class="visit-tag initial ml-2">初诊</span>
+                        <span id="game-role-badge" class="bg-gray-100 text-gray-600 px-3 py-1 rounded-full text-sm ml-2">👤 你：<span id="player-role-label">医生</span></span>
+                    </div>
+                    <div class="bg-light px-3 py-1 rounded-full text-sm">
+                        <i class="fa fa-commenting text-primary mr-1"></i> <span id="game-round-counter">对话回合: 0</span>
+                    </div>
+                </div>
+
+                <!-- 对话区域 -->
+                <div class="mb-6 h-[320px] overflow-y-auto bg-gray-50 rounded-lg p-4" id="chat-container">
+                    <div id="chat-messages" class="space-y-4">
+                        <div class="flex items-start">
+                            <div class="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-white mr-3 flex-shrink-0">
+                                <i class="fa fa-robot text-lg"></i>
+                            </div>
+                            <div class="doctor-bubble p-4 max-w-[80%]">
+                                <p>欢迎来到AI诊断游戏！</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 输入区域 + 诊断按钮 -->
+                <div class="flex flex-wrap gap-3 mb-4">
+                    <input type="text" id="chat-input" class="flex-1 min-w-[200px] border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-primary focus:border-transparent" placeholder="输入你的回答..." disabled>
+                    <button id="send-chat-btn" class="bg-primary hover:bg-primary/90 text-white font-medium px-6 py-3 rounded-lg transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+                        <i class="fa fa-send"></i> 发送
+                    </button>
+                    <button id="diagnosis-btn" class="diagnosis-btn px-6 py-3 rounded-lg flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+                        <i class="fa fa-stethoscope"></i> 做出诊断
+                    </button>
+                    <button id="hint-btn" class="hint-btn px-4 py-3 rounded-lg flex items-center gap-2 text-sm disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+                        <i class="fa fa-lightbulb-o"></i> 提示
+                    </button>
+                    <button id="end-game-btn" class="bg-danger/10 hover:bg-danger/20 text-danger font-medium px-4 py-3 rounded-lg transition-all duration-300">
+                        <i class="fa fa-flag"></i>
+                    </button>
+                </div>
+
+                <!-- 快捷操作 -->
+                <div class="flex flex-wrap gap-2 mb-4" id="quick-actions"></div>
+
+                <!-- 医生工具 -->
+                <div id="doctor-tools" class="grid grid-cols-1 md:grid-cols-2 gap-4 border-t border-gray-200 pt-4 mt-2">
+                    <div id="test-system">
+                        <div class="flex items-center justify-between mb-3">
+                            <h3 class="font-bold text-lg">🔬 检查系统 <span class="text-xs text-gray-400 font-normal">(400+项)</span></h3>
+                            <button id="toggle-test-btn" class="text-sm text-primary hover:underline">展开</button>
+                        </div>
+                        <div id="test-area" class="hidden">
+                            <div class="flex gap-2 mb-2">
+                                <input type="text" id="test-search-input" class="flex-1 border border-gray-300 rounded-lg px-3 py-1 text-sm" placeholder="🔍 搜索检查（如：核磁、CT、血常规）">
+                                <button id="test-search-btn" class="bg-gray-200 hover:bg-gray-300 px-3 py-1 rounded-lg text-sm">搜索</button>
+                            </div>
+                            <div id="test-list" class="grid grid-cols-1 gap-1 max-h-32 overflow-y-auto"></div>
+                            <div class="mt-2 flex gap-2">
+                                <button id="request-test-btn" class="bg-secondary/20 hover:bg-secondary/30 text-secondary font-medium px-3 py-1 rounded-lg text-sm">📋 申请检查</button>
+                                <button id="view-reports-btn" class="bg-gray-100 hover:bg-gray-200 px-3 py-1 rounded-lg text-sm">📄 查看报告</button>
+                            </div>
+                            <div id="report-display" class="mt-2 hidden">
+                                <div id="report-content" class="report-card text-sm"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="prescription-system">
+                        <div class="flex items-center justify-between mb-3">
+                            <h3 class="font-bold text-lg">💊 处方药系统 <span class="text-xs text-gray-400 font-normal">(280+种)</span></h3>
+                            <button id="toggle-prescription-btn" class="text-sm text-primary hover:underline">展开</button>
+                        </div>
+                        <div id="prescription-area" class="hidden">
+                            <div class="flex gap-2 mb-2">
+                                <input type="text" id="drug-search-input" class="flex-1 border border-gray-300 rounded-lg px-3 py-1 text-sm" placeholder="🔍 搜索药物（如：感冒灵、阿莫西林）">
+                                <button id="drug-search-btn" class="bg-gray-200 hover:bg-gray-300 px-3 py-1 rounded-lg text-sm">搜索</button>
+                            </div>
+                            <div id="drug-list" class="grid grid-cols-1 gap-1 max-h-32 overflow-y-auto"></div>
+                            <div class="mt-2 flex gap-2">
+                                <button id="clear-prescription-btn" class="bg-gray-100 hover:bg-gray-200 px-3 py-1 rounded-lg text-sm">🗑️ 清空</button>
+                                <button id="submit-prescription-btn" class="bg-accent hover:bg-accent/90 text-white font-medium px-3 py-1 rounded-lg text-sm disabled:opacity-50" disabled>📋 提交处方</button>
+                            </div>
+                            <div id="prescription-list" class="mt-2 flex flex-wrap gap-2"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 患者模式提示 -->
+                <div id="patient-ai-tools" class="hidden border-t border-gray-200 pt-4 mt-2">
+                    <div class="text-sm text-gray-500">
+                        <p>🤖 AI医生正在问诊，请回答他的问题。</p>
+                        <p class="text-xs text-gray-400">AI医生会根据你的回答决定是否需要检查或开药。</p>
+                    </div>
+                </div>
+
+                <!-- 诊断结果 -->
+                <div id="diagnosis-result" class="hidden mt-4 bg-light rounded-lg p-4">
+                    <h3 class="font-bold mb-2">📊 诊断结果</h3>
+                    <div id="diagnosis-details" class="space-y-2"></div>
+                    <div class="mt-4 text-center">
+                        <button id="back-to-main-menu-btn" class="bg-primary hover:bg-primary/90 text-white font-bold py-3 px-8 rounded-full text-lg transition-all duration-300">
+                            返回主菜单 <i class="fa fa-home ml-2"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ===== 诊断弹窗 ===== -->
+            <div id="diagnosis-modal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50 animate-fade-in">
+                <div class="bg-white rounded-2xl p-8 max-w-lg w-full mx-4 shadow-2xl">
+                    <h3 class="text-2xl font-bold text-center mb-6 text-primary">💊 做出诊断</h3>
+                    <p class="text-gray-600 text-center mb-4">请输入你认为患者患有的疾病名称：</p>
+                    <input type="text" id="diagnosis-input" class="w-full border border-gray-300 rounded-lg px-4 py-3 mb-4 focus:ring-2 focus:ring-primary focus:border-transparent" placeholder="例如：普通感冒、肺炎、高血压...">
+                    <div class="flex gap-3">
+                        <button id="diagnosis-submit-btn" class="flex-1 bg-success hover:bg-success/90 text-white font-bold py-3 rounded-lg transition-all duration-300">
+                            ✅ 提交诊断
+                        </button>
+                        <button id="diagnosis-cancel-btn" class="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-700 font-medium py-3 rounded-lg transition-all duration-300">
+                            取消
+                        </button>
+                    </div>
+                    <div class="mt-4 text-center">
+                        <button id="diagnosis-hint-in-modal-btn" class="text-primary hover:text-primary/80 text-sm">
+                            <i class="fa fa-lightbulb-o mr-1"></i> 需要提示？
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ===== 提示弹窗 ===== -->
+            <div id="hint-modal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50 animate-fade-in">
+                <div class="bg-white rounded-2xl p-8 max-w-lg w-full mx-4 shadow-2xl">
+                    <h3 class="text-2xl font-bold text-center mb-6 text-accent">💡 AI诊断提示</h3>
+                    <div id="hint-content" class="bg-light rounded-lg p-4 mb-4 text-gray-700 leading-relaxed">
+                        <p>正在生成提示...</p>
+                    </div>
+                    <div class="flex gap-3">
+                        <button id="hint-continue-btn" class="flex-1 bg-primary hover:bg-primary/90 text-white font-bold py-3 rounded-lg transition-all duration-300">
+                            继续问诊
+                        </button>
+                        <button id="hint-diagnosis-btn" class="flex-1 bg-success hover:bg-success/90 text-white font-bold py-3 rounded-lg transition-all duration-300">
+                            去诊断
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ===== 结束问诊确认弹窗 ===== -->
+            <div id="end-visit-modal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50 animate-fade-in">
+                <div class="bg-white rounded-2xl p-8 max-w-lg w-full mx-4 shadow-2xl">
+                    <h3 class="text-2xl font-bold text-center mb-4 text-accent">📋 结束问诊？</h3>
+                    <p class="text-gray-600 text-center mb-2">你已经开具了处方，是否要结束问诊并做出最终诊断？</p>
+                    <p class="text-sm text-gray-400 text-center mb-6">你也可以继续问诊，收集更多信息后再诊断。</p>
+                    <div class="flex gap-3">
+                        <button id="end-visit-confirm-btn" class="flex-1 bg-success hover:bg-success/90 text-white font-bold py-3 rounded-lg transition-all duration-300">
+                            ✅ 结束问诊，提交诊断
+                        </button>
+                        <button id="end-visit-cancel-btn" class="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-700 font-medium py-3 rounded-lg transition-all duration-300">
+                            继续问诊
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ===== 结果界面 ===== -->
+            <div id="result-screen" class="hidden animate-fade-in text-center py-6">
+                <div id="result-icon" class="w-24 h-24 rounded-full flex items-center justify-center mx-auto mb-6">
+                    <i class="fa fa-trophy text-5xl text-success"></i>
+                </div>
+                <h2 id="result-title" class="text-3xl font-bold mb-4"></h2>
+                <p id="result-message" class="text-gray-600 mb-8 max-w-md mx-auto"></p>
+                <div id="result-details" class="bg-light rounded-lg p-4 max-w-lg mx-auto mb-8 text-left"></div>
+                <div class="flex justify-center space-x-4 flex-wrap">
+                    <button id="play-again-btn" class="bg-primary hover:bg-primary/90 text-white font-bold py-3 px-8 rounded-full text-lg transition-all duration-300">
+                        再玩一次 <i class="fa fa-refresh ml-2"></i>
+                    </button>
+                    <button id="back-to-main-from-result-btn" class="bg-gray-200 hover:bg-gray-300 text-gray-700 font-medium py-3 px-8 rounded-full text-lg transition-all duration-300">
+                        主菜单 <i class="fa fa-home ml-2"></i>
+                    </button>
+                </div>
+            </div>
+        </main>
+
+        <footer class="text-center text-gray-500 text-sm">
+            <p>© 2024 专业AI医生诊断游戏 v2.6 | 接入AI大模型 · 真实对话 · 仅供娱乐</p>
+        </footer>
+    </div>
+
+    <script>
+        // ============================================================
+        //  配置
+        // ============================================================
+        const CONFIG = {
+            API_KEY: '',
+            API_URL: 'https://api.deepseek.com/v1/chat/completions',
+            MODEL: 'deepseek-chat',
+        };
+
+        // ============================================================
+        //  疾病数据库 — 大幅扩充 (12大专科，初级/中级/高级)
+        // ============================================================
+        const diseaseDatabase = {
+            // ===================== 初级：门诊极常见轻症 =====================
+            "初级": {
+                "呼吸系统": {
+                    "普通感冒": {
+                        symptoms: ["鼻塞", "流清涕", "轻微咽痛", "低热37.0-37.8℃", "打喷嚏", "轻度乏力"],
+                        description: "普通病毒上呼吸道感染，自限性，7天左右自愈，无肺部累及",
+                        drugs: ["感冒灵", "板蓝根", "维C银翘片", "对乙酰氨基酚", "维生素C"],
+                        tests: ["体温测量", "血常规", "咽拭子"]
+                    },
+                    "流行性感冒（轻症）": {
+                        symptoms: ["高烧38.5℃以上", "全身肌肉酸痛", "头痛", "乏力明显", "干咳无痰"],
+                        description: "甲/乙流轻症，无呼吸困难，无肺部感染",
+                        drugs: ["奥司他韦", "连花清瘟", "布洛芬", "氨溴索"],
+                        tests: ["体温测量", "血常规", "流感病毒检测", "CRP"]
+                    },
+                    "急性支气管炎": {
+                        symptoms: ["阵发性咳嗽", "少量白痰", "胸骨后发痒", "无高热"],
+                        description: "气管支气管黏膜急性炎症，未累及肺部",
+                        drugs: ["氨溴索", "复方甘草片", "头孢克肟（细菌感染）", "沙丁胺醇雾化"],
+                        tests: ["胸部X光", "血常规", "CRP"]
+                    },
+                    "过敏性鼻炎": {
+                        symptoms: ["阵发性打喷嚏", "清水样鼻涕", "鼻痒眼痒", "遇花粉灰尘加重"],
+                        description: "IgE介导鼻腔过敏，无发热无脓涕",
+                        drugs: ["氯雷他定", "西替利嗪", "生理盐水喷鼻", "鼻炎康"],
+                        tests: ["IgE", "吸入性过敏原检测"]
+                    }
+                },
+                "消化系统": {
+                    "急性单纯性胃炎": {
+                        symptoms: ["上腹部隐痛", "餐后饱胀", "嗳气反酸", "轻微恶心无呕吐"],
+                        description: "饮食刺激、受凉导致胃黏膜轻度充血水肿，无糜烂出血",
+                        drugs: ["奥美拉唑", "铝碳酸镁", "健胃消食片", "莫沙必利"],
+                        tests: ["碳13呼气试验", "腹部超声", "胃镜（可选）"]
+                    },
+                    "功能性消化不良": {
+                        symptoms: ["餐后腹胀", "食欲不振", "嗳气频繁", "无腹痛、无反酸"],
+                        description: "胃肠动力不足，无器质性病变",
+                        drugs: ["多酶片", "莫沙必利", "保和丸"],
+                        tests: ["腹部超声", "血常规"]
+                    },
+                    "急性肠炎（轻症）": {
+                        symptoms: ["稀便每日2-3次", "轻微下腹隐痛", "无发热无脓血便"],
+                        description: "受凉、饮食不洁引起肠道蠕动加快，无细菌侵袭",
+                        drugs: ["蒙脱石散", "双歧杆菌三联活菌", "口服补液盐"],
+                        tests: ["粪便常规+隐血", "血常规"]
+                    },
+                    "胃食管反流（轻度）": {
+                        symptoms: ["餐后反酸烧心", "胸骨轻微灼热感", "平卧加重"],
+                        description: "食管下括约肌松弛，轻度胃酸反流",
+                        drugs: ["雷贝拉唑", "铝碳酸镁", "莫沙必利"],
+                        tests: ["碳13呼气试验"]
+                    }
+                },
+                "循环系统": {
+                    "1级原发性高血压": {
+                        symptoms: ["偶发头晕", "颈部发紧", "劳累后轻微头痛，休息缓解"],
+                        description: "血压140-159/90-99mmHg，无靶器官损伤",
+                        drugs: ["氨氯地平", "厄贝沙坦", "氢氯噻嗪"],
+                        tests: ["血压测量", "心电图", "血脂", "肾功能"]
+                    },
+                    "窦性心动过速（生理性）": {
+                        symptoms: ["活动后心慌", "心跳变快，安静后恢复正常"],
+                        description: "运动、熬夜、咖啡诱发，无心脏器质性病变",
+                        drugs: ["美托洛尔（临时）", "谷维素"],
+                        tests: ["心电图", "动态心电图"]
+                    }
+                },
+                "泌尿系统": {
+                    "单纯性尿路感染（膀胱炎轻症）": {
+                        symptoms: ["轻微尿频", "小便灼热感", "无腰痛发热"],
+                        description: "下尿路轻度细菌感染，未上行至肾脏",
+                        drugs: ["左氧氟沙星", "头孢克肟", "三金片"],
+                        tests: ["尿常规", "尿培养"]
+                    }
+                },
+                "皮肤科": {
+                    "轻度湿疹": {
+                        symptoms: ["皮肤干燥瘙痒", "少量红斑丘疹，无渗水糜烂"],
+                        description: "皮肤屏障受损，轻度过敏性皮炎",
+                        drugs: ["丁酸氢化可的松乳膏", "凡士林保湿霜", "氯雷他定"],
+                        tests: ["IgE", "皮肤过敏原检测"]
+                    },
+                    "足癣（轻度水疱型）": {
+                        symptoms: ["脚趾缝脱皮、轻微瘙痒，少量小水疱"],
+                        description: "皮肤真菌感染，轻度足癣",
+                        drugs: ["特比萘芬乳膏"],
+                        tests: ["真菌涂片"]
+                    }
+                },
+                "骨科/疼痛": {
+                    "颈型颈椎病": {
+                        symptoms: ["颈肩酸痛僵硬", "低头加重，无手麻头晕"],
+                        description: "长期低头肌肉劳损，无椎间盘突出压迫神经",
+                        drugs: ["塞来昔布"],
+                        tests: ["颈椎X光"]
+                    },
+                    "腰肌劳损": {
+                        symptoms: ["腰部酸胀，久坐久站加重，休息缓解"],
+                        description: "腰背肌肉慢性劳损，无腰椎间盘突出",
+                        drugs: ["洛索洛芬钠"],
+                        tests: ["腰椎X光"]
+                    }
+                },
+                "儿科轻症": {
+                    "小儿普通上感": {
+                        symptoms: ["流涕轻微咳嗽", "低热37.5℃以内", "精神尚可"],
+                        description: "儿童轻症病毒感冒，无肺部感染",
+                        drugs: ["小儿感冒颗粒", "对乙酰氨基酚混悬液"],
+                        tests: ["体温", "血常规"]
+                    }
+                }
+            },
+
+            // ===================== 中级：常见慢性病、中度急性病 =====================
+            "中级": {
+                "呼吸系统": {
+                    "社区获得性细菌性肺炎": {
+                        symptoms: ["高热39℃", "咳黄浓痰", "胸痛", "活动后气短", "乏力食欲差"],
+                        description: "细菌感染肺部，肺部实变，需规范抗生素治疗",
+                        drugs: ["阿莫西林", "头孢克肟", "氨溴索", "布洛芬"],
+                        tests: ["胸部X光", "血常规", "CRP", "痰培养", "血氧饱和度"]
+                    },
+                    "支气管哮喘急性发作（中度）": {
+                        symptoms: ["喘息胸闷", "夜间咳嗽加重", "活动气短", "呼气相哮鸣音"],
+                        description: "气道痉挛，中度发作，无呼吸衰竭",
+                        drugs: ["沙丁胺醇雾化", "布地奈德雾化", "孟鲁司特钠", "舒利迭吸入剂"],
+                        tests: ["肺功能", "血氧饱和度", "胸片"]
+                    },
+                    "慢性支气管炎急性加重": {
+                        symptoms: ["常年咳嗽咳痰", "近期黄痰增多", "轻度喘息"],
+                        description: "老年长期吸烟人群，气道慢性炎症急性感染",
+                        drugs: ["莫西沙星", "茶碱缓释片", "氨溴索"],
+                        tests: ["胸部CT", "血常规", "CRP"]
+                    },
+                    "鼻窦炎": {
+                        symptoms: ["流脓涕、鼻塞、前额胀痛、晨起痰多"],
+                        description: "鼻窦细菌感染，鼻腔引流不畅",
+                        drugs: ["头孢呋辛酯", "生理盐水洗鼻"],
+                        tests: ["鼻窦CT"]
+                    }
+                },
+                "消化系统": {
+                    "十二指肠溃疡": {
+                        symptoms: ["空腹上腹痛，进食缓解", "夜间痛", "反酸嗳气"],
+                        description: "幽门螺杆菌高发，十二指肠黏膜破损",
+                        drugs: ["奥美拉唑", "阿莫西林", "克拉霉素", "铝碳酸镁"],
+                        tests: ["胃镜", "碳13呼气试验", "粪便隐血"]
+                    },
+                    "胆囊结石伴慢性胆囊炎": {
+                        symptoms: ["进食油腻右上腹隐痛", "餐后腹胀", "偶放射右肩"],
+                        description: "胆囊结石刺激胆囊壁慢性炎症",
+                        drugs: ["消炎利胆片", "匹维溴铵"],
+                        tests: ["腹部超声", "肝功能"]
+                    },
+                    "急性胰腺炎（水肿型）": {
+                        symptoms: ["暴饮暴食后中上腹持续性剧痛", "恶心呕吐"],
+                        description: "胰腺水肿渗出，无坏死，预后较好",
+                        drugs: ["奥美拉唑", "解痉药", "补液"],
+                        tests: ["血淀粉酶", "脂肪酶", "腹部CT", "肝功能"]
+                    },
+                    "慢性乙型肝炎（轻度活动）": {
+                        symptoms: ["乏力、食欲差、右上腹轻微不适"],
+                        description: "乙肝病毒轻度复制，肝细胞轻度损伤",
+                        drugs: ["恩替卡韦", "丙酚替诺福韦"],
+                        tests: ["乙肝五项", "HBV-DNA", "肝功能", "肝脏超声"]
+                    }
+                },
+                "循环系统": {
+                    "2级高血压合并高血脂": {
+                        symptoms: ["频繁头晕、头痛、乏力、活动后胸闷"],
+                        description: "血压160-179/100-109，血脂升高，动脉硬化风险升高",
+                        drugs: ["缬沙坦", "阿托伐他汀", "氨氯地平"],
+                        tests: ["血压", "血脂全套", "心电图", "颈动脉超声", "肾功能"]
+                    },
+                    "阵发性心房颤动": {
+                        symptoms: ["突发心慌心悸、胸闷、头晕", "发作数小时自行缓解"],
+                        description: "心律不齐，血栓风险升高",
+                        drugs: ["倍他乐克", "利伐沙班"],
+                        tests: ["心电图", "动态心电图", "心脏超声", "D-二聚体"]
+                    },
+                    "稳定型心绞痛": {
+                        symptoms: ["运动后胸骨压榨痛", "休息3-5分钟缓解"],
+                        description: "冠脉狭窄，心肌短暂缺血，无心梗",
+                        drugs: ["硝酸甘油", "阿托伐他汀", "氯吡格雷", "美托洛尔"],
+                        tests: ["心电图", "运动平板", "冠脉CTA", "心肌酶"]
+                    }
+                },
+                "泌尿系统": {
+                    "急性肾盂肾炎": {
+                        symptoms: ["高热寒战、单侧腰痛", "尿频尿急尿痛"],
+                        description: "上尿路细菌感染，累及肾脏",
+                        drugs: ["左氧氟沙星", "头孢曲松静脉"],
+                        tests: ["尿常规", "尿培养", "血常规", "泌尿系超声"]
+                    },
+                    "肾结石（直径<1cm）": {
+                        symptoms: ["突发腰腹绞痛、肉眼血尿、排尿不畅"],
+                        description: "输尿管结石卡顿，无肾积水重度损伤",
+                        drugs: ["排石颗粒", "山莨菪碱"],
+                        tests: ["泌尿系超声", "腹部X光", "肾功能"]
+                    },
+                    "慢性肾炎": {
+                        symptoms: ["晨起眼睑水肿、泡沫尿、轻度高血压"],
+                        description: "肾小球慢性免疫损伤，肾功能轻度下降",
+                        drugs: ["厄贝沙坦", "百令胶囊"],
+                        tests: ["尿常规", "24小时尿蛋白", "肾功能"]
+                    }
+                },
+                "内分泌代谢": {
+                    "2型糖尿病（初发）": {
+                        symptoms: ["多饮多食多尿、体重轻度下降、乏力"],
+                        description: "胰岛素抵抗，空腹血糖7.0-10mmol/L",
+                        drugs: ["二甲双胍", "格列美脲"],
+                        tests: ["空腹血糖", "糖化血红蛋白", "尿常规", "血脂"]
+                    },
+                    "原发性甲状腺功能减退": {
+                        symptoms: ["怕冷乏力、嗜睡、体重增加、便秘、水肿"],
+                        description: "桥本甲状腺炎为主，甲状腺激素分泌不足",
+                        drugs: ["左甲状腺素钠"],
+                        tests: ["TSH", "FT3", "FT4", "甲状腺抗体", "甲状腺超声"]
+                    },
+                    "痛风急性发作": {
+                        symptoms: ["单关节红肿热痛", "夜间剧痛，多为大脚趾"],
+                        description: "血尿酸升高尿酸盐结晶沉积关节",
+                        drugs: ["洛索洛芬钠", "非布司他"],
+                        tests: ["血尿酸", "肾功能", "关节X光"]
+                    }
+                },
+                "风湿免疫": {
+                    "类风湿关节炎（中度活动）": {
+                        symptoms: ["双手对称性关节肿痛、晨僵>1小时"],
+                        description: "自身免疫侵蚀小关节，未出现关节畸形",
+                        drugs: ["甲氨蝶呤", "塞来昔布", "来氟米特"],
+                        tests: ["类风湿因子", "抗CCP", "血沉", "CRP", "关节X光"]
+                    },
+                    "强直性脊柱炎": {
+                        symptoms: ["下腰背痛、夜间痛", "活动后减轻，晨僵"],
+                        description: "骶髂关节免疫炎症，青年男性多发",
+                        drugs: ["柳氮磺吡啶", "洛索洛芬钠"],
+                        tests: ["HLA-B27", "骶髂CT", "血沉"]
+                    }
+                },
+                "妇科": {
+                    "细菌性阴道炎": {
+                        symptoms: ["灰白色白带、鱼腥味、外阴轻微瘙痒"],
+                        description: "阴道菌群失衡厌氧菌增殖",
+                        drugs: ["甲硝唑栓", "克林霉素"],
+                        tests: ["阴道分泌物常规"]
+                    },
+                    "多囊卵巢综合征": {
+                        symptoms: ["月经推迟、闭经、痤疮、多毛、肥胖"],
+                        description: "雄激素过高，排卵障碍",
+                        drugs: ["达英-35", "二甲双胍"],
+                        tests: ["性激素六项", "妇科超声", "AMH"]
+                    },
+                    "盆腔炎": {
+                        symptoms: ["下腹痛、白带发黄异味", "经期延长、低热"],
+                        description: "子宫附件细菌感染",
+                        drugs: ["左氧氟沙星+甲硝唑"],
+                        tests: ["妇科超声", "血常规", "白带常规"]
+                    }
+                },
+                "外科常见病": {
+                    "急性单纯性阑尾炎": {
+                        symptoms: ["转移性右下腹痛、恶心、低热、右下腹压痛"],
+                        description: "阑尾轻度化脓，无穿孔坏疽",
+                        drugs: ["头孢+甲硝唑抗感染（术前保守）"],
+                        tests: ["腹部超声", "血常规", "腹部CT"]
+                    },
+                    "混合痔伴出血": {
+                        symptoms: ["便后滴血、肛门异物坠胀"],
+                        description: "直肠静脉丛曲张破裂出血",
+                        drugs: ["云南白药", "痔疮膏"],
+                        tests: ["粪便隐血", "肛门指检"]
+                    }
+                },
+                "皮肤科": {
+                    "带状疱疹": {
+                        symptoms: ["单侧皮肤针刺样痛", "成簇水疱沿神经分布"],
+                        description: "水痘病毒再激活，神经受累",
+                        drugs: ["伐昔洛韦", "甲钴胺", "布洛芬"],
+                        tests: ["病毒抗体"]
+                    }
+                }
+            },
+
+            // ===================== 高级：危重症、疑难病、恶性肿瘤 =====================
+            "高级": {
+                "呼吸系统": {
+                    "急性肺栓塞": {
+                        symptoms: ["突发重度呼吸困难", "撕裂样胸痛", "咯血", "心悸", "低血压晕厥"],
+                        description: "下肢深静脉血栓脱落堵塞肺动脉，致死风险高",
+                        drugs: ["利伐沙班", "低分子肝素", "吗啡（止痛）"],
+                        tests: ["CTPA", "D-二聚体", "血气分析", "超声心动图", "心电图"]
+                    },
+                    "重症肺炎（ARDS倾向）": {
+                        symptoms: ["持续高热", "严重呼吸困难", "口唇发绀", "意识模糊"],
+                        description: "双肺广泛炎症，氧合急剧下降，呼吸衰竭风险",
+                        drugs: ["莫西沙星", "亚胺培南", "糖皮质激素", "高流量吸氧"],
+                        tests: ["胸部CT", "血气", "炎症全套", "痰培养", "血氧"]
+                    },
+                    "自发性气胸（大量）": {
+                        symptoms: ["突发一侧剧烈胸痛", "严重胸闷气短"],
+                        description: "肺破裂大量气体积聚胸腔压迫肺组织",
+                        drugs: ["吸氧", "止痛药物"],
+                        tests: ["胸部X光", "胸部CT"]
+                    },
+                    "间质性肺病急性加重": {
+                        symptoms: ["进行性呼吸困难", "干咳", "低氧"],
+                        description: "肺间质纤维化急性恶化，不可逆损伤",
+                        drugs: ["尼达尼布", "吡非尼酮", "激素"],
+                        tests: ["胸部高分辨CT", "肺功能", "血气"]
+                    }
+                },
+                "循环系统危重症": {
+                    "急性ST段抬高心肌梗死": {
+                        symptoms: ["胸骨压榨剧痛放射左肩下颌", "大汗", "濒死感", "恶心", "呼吸困难"],
+                        description: "冠脉完全闭塞，心肌坏死，致死致残极高",
+                        drugs: ["阿司匹林", "氯吡格雷", "硝酸甘油", "阿托伐他汀", "吗啡"],
+                        tests: ["心电图", "心肌肌钙蛋白", "CK-MB", "冠脉CTA", "心脏超声"]
+                    },
+                    "主动脉夹层": {
+                        symptoms: ["突发撕裂样剧烈胸背痛", "双侧血压差大", "意识障碍"],
+                        description: "主动脉内膜撕裂，破裂即刻死亡",
+                        drugs: ["硝普钠", "美托洛尔", "吗啡镇静镇痛"],
+                        tests: ["主动脉CTA", "MRI", "心肌酶", "心电图"]
+                    },
+                    "慢性心力衰竭急性失代偿": {
+                        symptoms: ["端坐呼吸", "粉红色泡沫痰", "下肢重度水肿", "乏力少尿"],
+                        description: "心功能Ⅳ级，急性肺水肿",
+                        drugs: ["呋塞米", "硝普钠", "螺内酯", "倍他乐克"],
+                        tests: ["BNP", "NT-proBNP", "心脏超声", "血气", "肾功能"]
+                    },
+                    "恶性高血压": {
+                        symptoms: ["血压≥180/120", "剧烈头痛", "视物模糊", "肾功能损伤"],
+                        description: "高血压急症，靶器官急性损害",
+                        drugs: ["硝普钠静脉", "厄贝沙坦", "氨氯地平"],
+                        tests: ["眼底", "肾功能", "头颅CT", "尿常规"]
+                    }
+                },
+                "消化危重症/肿瘤": {
+                    "重症急性出血坏死性胰腺炎": {
+                        symptoms: ["持续性刀割样全腹痛", "呕吐", "高热", "休克", "少尿"],
+                        description: "胰腺大面积坏死，多器官衰竭风险",
+                        drugs: ["抑酶药物", "质子泵抑制剂", "广谱抗生素", "补液升压"],
+                        tests: ["腹部增强CT", "血脂肪酶", "淀粉酶", "血气", "肝功能", "肾功能"]
+                    },
+                    "肝硬化失代偿期（腹水+食管静脉曲张）": {
+                        symptoms: ["大量腹水、腹胀、呕血黑便", "黄疸", "肝掌蜘蛛痣"],
+                        description: "肝脏硬化门脉高压，易大出血、肝性脑病",
+                        drugs: ["螺内酯", "普萘洛尔", "人血白蛋白", "奥美拉唑"],
+                        tests: ["腹部超声", "肝功能", "凝血", "胃镜", "腹水常规"]
+                    },
+                    "胃癌中晚期": {
+                        symptoms: ["持续性上腹痛", "黑便", "体重快速下降", "贫血乏力"],
+                        description: "胃恶性肿瘤浸润转移",
+                        drugs: ["奥美拉唑", "止血药", "化疗辅助药物"],
+                        tests: ["胃镜", "病理活检", "腹部增强CT", "肿瘤标志物CEA/CA724"]
+                    },
+                    "结直肠癌伴肝转移": {
+                        symptoms: ["便血、大便变细、腹痛、消瘦、肝区胀痛"],
+                        description: "肠道恶性肿瘤远处转移",
+                        drugs: ["止血", "营养支持", "化疗辅助"],
+                        tests: ["肠镜", "病理", "胸腹CT", "CEA", "CA199"]
+                    }
+                },
+                "神经/脑血管重症": {
+                    "急性脑梗死（大面积）": {
+                        symptoms: ["突发单侧肢体偏瘫", "口角歪斜", "言语不清", "意识嗜睡"],
+                        description: "颅内大血管闭塞，脑组织大面积缺血坏死",
+                        drugs: ["阿替普酶（溶栓）", "阿司匹林", "阿托伐他汀", "丁苯酞"],
+                        tests: ["头颅CT", "头颅MRI", "头颈CTA", "凝血", "血糖血脂"]
+                    },
+                    "脑出血（基底节大量出血）": {
+                        symptoms: ["突发剧烈头痛", "呕吐", "偏瘫", "意识障碍", "血压骤升"],
+                        description: "脑血管破裂颅内血肿压迫脑组织",
+                        drugs: ["甘露醇脱水", "降压药", "止血", "营养神经"],
+                        tests: ["头颅CT", "凝血", "肾功能"]
+                    },
+                    "重症病毒性脑炎": {
+                        symptoms: ["高热抽搐", "意识昏迷", "头痛呕吐", "脑膜刺激征"],
+                        description: "病毒广泛侵犯脑实质，脑水肿高颅压",
+                        drugs: ["更昔洛韦", "甘露醇", "镇静抗惊厥"],
+                        tests: ["脑脊液常规", "脑电图", "头颅MRI"]
+                    },
+                    "癫痫持续状态": {
+                        symptoms: ["持续性全身抽搐", "意识丧失", "发绀窒息"],
+                        description: "惊厥无法自行终止，脑缺氧损伤",
+                        drugs: ["地西泮", "丙戊酸钠", "甘露醇"],
+                        tests: ["脑电图", "头颅CT"]
+                    }
+                },
+                "自身免疫重症": {
+                    "系统性红斑狼疮（狼疮肾炎活动期）": {
+                        symptoms: ["面部蝶形红斑", "发热", "泡沫尿", "水肿关节痛"],
+                        description: "全身多器官自身免疫损伤，肾脏受累",
+                        drugs: ["泼尼松", "环磷酰胺", "羟氯喹"],
+                        tests: ["ANA", "抗dsDNA", "补体", "尿常规", "肾穿刺", "血沉"]
+                    },
+                    "重症肌无力危象": {
+                        symptoms: ["全身无力、吞咽呼吸困难、发绀"],
+                        description: "呼吸肌受累，窒息风险",
+                        drugs: ["溴吡斯的明", "甲泼尼龙", "丙球"],
+                        tests: ["肌电图", "乙酰胆碱受体抗体", "胸部CT"]
+                    },
+                    "系统性硬化症": {
+                        symptoms: ["皮肤变硬、雷诺现象、胸闷气短、吞咽困难"],
+                        description: "全身纤维化累及心肺消化道",
+                        drugs: ["激素", "免疫抑制剂", "扩血管药物"],
+                        tests: ["抗Scl-70", "肺功能", "皮肤活检"]
+                    }
+                },
+                "泌尿重症/肿瘤": {
+                    "急性肾损伤（尿毒症期）": {
+                        symptoms: ["无尿少尿", "全身重度水肿", "恶心呕吐", "高钾血症"],
+                        description: "肾功能急剧衰竭，电解质紊乱危及心脏",
+                        drugs: ["降钾树脂", "利尿剂", "透析支持"],
+                        tests: ["肾功能", "电解质", "尿常规", "肾脏超声"]
+                    },
+                    "前列腺癌晚期骨转移": {
+                        symptoms: ["骨持续性剧痛", "排尿困难", "消瘦贫血"],
+                        description: "前列腺恶性肿瘤骨多发转移",
+                        drugs: ["比卡鲁胺", "止痛吗啡", "双膦酸盐"],
+                        tests: ["PSA", "fPSA", "骨扫描", "盆腔MRI"]
+                    }
+                },
+                "妇科恶性重症": {
+                    "卵巢癌晚期": {
+                        symptoms: ["腹胀腹水", "下腹包块", "消瘦", "盆腔疼痛"],
+                        description: "卵巢恶性肿瘤腹腔广泛转移",
+                        drugs: ["化疗辅助", "止痛药物"],
+                        tests: ["CA125", "HE4", "盆腔增强CT", "腹水病理"]
+                    }
+                },
+                "急救中毒类": {
+                    "过敏性休克": {
+                        symptoms: ["用药/进食后突发全身皮疹", "喉头水肿", "呼吸困难", "血压下降"],
+                        description: "Ⅰ型超敏反应，即刻窒息休克风险",
+                        drugs: ["肾上腺素", "地塞米松", "西替利嗪", "吸氧补液"],
+                        tests: ["血氧", "血压", "IgE（事后）"]
+                    },
+                    "有机磷农药中毒（中重度）": {
+                        symptoms: ["瞳孔缩小", "大汗流涎", "肌肉震颤", "呼吸困难昏迷"],
+                        description: "胆碱酯酶重度抑制，呼吸肌麻痹",
+                        drugs: ["阿托品", "解磷定", "甘露醇"],
+                        tests: ["胆碱酯酶", "血气", "心电图"]
+                    }
+                }
+            }
+        };
+
+        // ============================================================
+        //  🔬 检查数据库 (400+项) — 完整移植自外部文件
+        // ============================================================
+        const testDatabase = [
+            { name: "体温测量", category: "基础检查", normal: "36.0-37.2°C", hint: "正常体温范围，超过37.3°C为发热" },
+            { name: "血压测量", category: "基础检查", normal: "90-140/60-90 mmHg", hint: "收缩压≥140或舒张压≥90为高血压" },
+            { name: "心率检查", category: "基础检查", normal: "60-100 次/分", hint: "成人静息心率正常范围，>100为心动过速" },
+            { name: "呼吸频率", category: "基础检查", normal: "12-20 次/分", hint: "成人静息呼吸频率，>20为呼吸急促" },
+            { name: "血氧饱和度", category: "基础检查", normal: "95-100%", hint: "血氧低于95%提示缺氧，需吸氧" },
+            { name: "身高体重", category: "基础检查", normal: "BMI 18.5-24.9", hint: "BMI≥24为超重，≥28为肥胖" },
+            { name: "腰围测量", category: "基础检查", normal: "男<90cm, 女<85cm", hint: "超标提示中心性肥胖，代谢综合征风险增加" },
+            { name: "腹围测量", category: "基础检查", normal: "男<90cm, 女<85cm", hint: "腹围超标提示腹型肥胖" },
+            { name: "臀围测量", category: "基础检查", normal: "视情况而定", hint: "用于计算腰臀比" },
+            { name: "腰臀比", category: "基础检查", normal: "男<0.9, 女<0.85", hint: "超标提示中心性肥胖，心血管风险增加" },
+            { name: "尿常规", category: "体液常规", normal: "蛋白阴性、糖阴性、隐血阴性、白细胞阴性", hint: "筛查肾炎、尿路感染、糖尿病" },
+            { name: "24小时尿蛋白定量", category: "体液常规", normal: "<150mg/24h", hint: "升高提示肾脏损伤" },
+            { name: "尿微量白蛋白/肌酐比值", category: "体液常规", normal: "<30mg/g", hint: "早期糖尿病肾病筛查指标" },
+            { name: "粪便常规+隐血", category: "体液常规", normal: "无红细胞，隐血阴性", hint: "消化道出血、肠道肿瘤初筛" },
+            { name: "粪便钙卫蛋白", category: "体液常规", normal: "<50μg/g", hint: "升高提示肠道炎症" },
+            { name: "脑脊液常规", category: "体液常规", normal: "无色透明，细胞数0-5×10^6/L", hint: "脑膜炎、脑炎鉴别" },
+            { name: "胸腹水常规", category: "体液常规", normal: "漏出液细胞少，无大量中性粒", hint: "区分渗出液/漏出液" },
+            { name: "阴道分泌物常规", category: "体液常规", normal: "清洁度Ⅰ~Ⅱ度，无致病菌", hint: "阴道炎筛查" },
+            { name: "精液常规分析", category: "体液常规", normal: "精子浓度≥15×10^6/ml，前向运动≥32%", hint: "男性生育能力评估" },
+            { name: "血常规", category: "血液检查", normal: "WBC 4-10, RBC 3.5-5.5, Hb 120-160, PLT 100-300",
+                hint: "WBC升高提示感染，Hb降低提示贫血，PLT降低提示出血风险" },
+            { name: "C反应蛋白", category: "血液检查", normal: "<10 mg/L", hint: "显著升高提示急性感染或炎症" },
+            { name: "降钙素原", category: "血液检查", normal: "<0.5 ng/mL", hint: "升高提示细菌感染，>2提示脓毒症" },
+            { name: "血沉", category: "血液检查", normal: "男<15, 女<20 mm/h", hint: "升高提示炎症、感染或肿瘤" },
+            { name: "凝血功能", category: "血液检查", normal: "PT 11-13.5s, APTT 25-35s, INR 0.8-1.2",
+                hint: "PT/APTT延长提示凝血障碍，INR>1.5提示抗凝过度" },
+            { name: "D-二聚体", category: "血液检查", normal: "<0.5 mg/L", hint: "升高提示血栓形成，>2.0提示高血栓风险" },
+            { name: "凝血酶原时间", category: "血液检查", normal: "11-13.5秒", hint: "延长提示凝血因子缺乏或肝损伤" },
+            { name: "活化部分凝血活酶时间", category: "血液检查", normal: "25-35秒", hint: "延长提示内源性凝血通路异常" },
+            { name: "纤维蛋白原", category: "血液检查", normal: "2-4 g/L", hint: "升高提示急性炎症或高凝状态" },
+            { name: "抗凝血酶III", category: "血液检查", normal: "80-120%", hint: "降低提示高凝状态，血栓风险增加" },
+            { name: "蛋白C", category: "血液检查", normal: "70-140%", hint: "降低提示遗传性血栓风险" },
+            { name: "蛋白S", category: "血液检查", normal: "60-150%", hint: "降低提示血栓风险增加" },
+            { name: "狼疮抗凝物", category: "血液检查", normal: "阴性", hint: "阳性提示抗磷脂综合征或血栓风险" },
+            { name: "抗心磷脂抗体", category: "血液检查", normal: "阴性", hint: "阳性提示血栓风险或自身免疫病" },
+            { name: "β2-糖蛋白I抗体", category: "血液检查", normal: "阴性", hint: "阳性与抗磷脂综合征相关" },
+            { name: "白细胞介素6 IL-6", category: "血液检查", normal: "<7 pg/mL", hint: "感染、炎症、脓毒症敏感指标" },
+            { name: "肿瘤坏死因子α", category: "血液检查", normal: "<8.1 pg/mL", hint: "全身炎症标志物" },
+            { name: "网织红细胞计数", category: "血液检查", normal: "0.5%-1.5%", hint: "评估骨髓造血活性" },
+            { name: "有核红细胞", category: "血液检查", normal: "0", hint: "外周血出现提示严重缺氧、溶血" },
+            { name: "血小板压积PCT", category: "血液检查", normal: "0.108-0.282%", hint: "反映血小板总体积" },
+            { name: "肝功能", category: "血液检查", normal: "ALT<40, AST<40, GGT<50, ALP<120, TBIL<17",
+                hint: "ALT/AST升高提示肝损伤，TBIL升高提示黄疸" },
+            { name: "肾功能", category: "血液检查", normal: "Cr<110, BUN<7.1, UA<420",
+                hint: "Cr升高提示肾功能减退，UA升高提示高尿酸血症" },
+            { name: "血脂", category: "血液检查", normal: "TC<5.2, TG<1.7, HDL>1.0, LDL<3.4",
+                hint: "TC升高提示高胆固醇血症，LDL升高是动脉硬化危险因素" },
+            { name: "血糖", category: "血液检查", normal: "空腹3.9-6.1, 餐后2h<7.8", hint: "空腹>7.0提示糖尿病" },
+            { name: "糖化血红蛋白", category: "血液检查", normal: "4-6%", hint: ">6.5%提示糖尿病，反映近3个月血糖水平" },
+            { name: "电解质", category: "血液检查", normal: "K 3.5-5.3, Na 137-147, Cl 98-106, Ca 2.1-2.6",
+                hint: "异常提示电解质紊乱，需及时纠正" },
+            { name: "淀粉酶", category: "血液检查", normal: "25-125 U/L", hint: "显著升高提示急性胰腺炎" },
+            { name: "脂肪酶", category: "血液检查", normal: "10-140 U/L", hint: "升高提示胰腺疾病，更特异" },
+            { name: "心肌肌钙蛋白", category: "血液检查", normal: "cTnI <0.04, cTnT <0.01 ng/mL",
+                hint: "升高提示心肌损伤，急性心梗时显著升高" },
+            { name: "CK-MB", category: "血液检查", normal: "<25 U/L", hint: "升高提示心肌损伤" },
+            { name: "BNP", category: "血液检查", normal: "<100 pg/mL", hint: "升高提示心力衰竭" },
+            { name: "NT-proBNP", category: "血液检查", normal: "<125 pg/mL", hint: "升高提示心力衰竭，敏感度高" },
+            { name: "肌红蛋白", category: "血液检查", normal: "<70 ng/mL", hint: "升高提示心肌或骨骼肌损伤" },
+            { name: "同型半胱氨酸", category: "血液检查", normal: "<15 μmol/L", hint: "升高提示心血管疾病风险增加" },
+            { name: "胱抑素C", category: "血液检查", normal: "<1.2 mg/L", hint: "评估肾功能更敏感，优于Cr" },
+            { name: "视黄醇结合蛋白", category: "血液检查", normal: "25-70 mg/L", hint: "降低提示营养不良或肝损伤" },
+            { name: "前白蛋白", category: "血液检查", normal: "200-400 mg/L", hint: "降低提示营养不良或急性炎症" },
+            { name: "胆碱酯酶", category: "血液检查", normal: "5000-12000 U/L", hint: "降低提示肝损伤或有机磷中毒" },
+            { name: "腺苷脱氨酶", category: "血液检查", normal: "4-24 U/L", hint: "升高提示肝损伤或结核" },
+            { name: "乳酸脱氢酶", category: "血液检查", normal: "140-280 U/L", hint: "升高提示组织损伤或溶血" },
+            { name: "α-羟丁酸脱氢酶", category: "血液检查", normal: "72-182 U/L", hint: "升高提示心肌损伤" },
+            { name: "肌酸激酶", category: "血液检查", normal: "男<190, 女<170 U/L", hint: "升高提示肌肉或心肌损伤" },
+            { name: "醛缩酶", category: "血液检查", normal: "<8 U/L", hint: "升高提示肌肉疾病" },
+            { name: "碱性磷酸酶", category: "血液检查", normal: "45-125 U/L", hint: "升高提示肝胆疾病或骨病" },
+            { name: "γ-谷氨酰转移酶", category: "血液检查", normal: "男<55, 女<38 U/L", hint: "升高提示肝损伤或酒精性肝病" },
+            { name: "血镁", category: "血液检查", normal: "0.67-1.04 mmol/L", hint: "低镁诱发心律失常" },
+            { name: "血磷", category: "血液检查", normal: "0.96-1.62 mmol/L", hint: "骨代谢、肾病评估" },
+            { name: "总蛋白、白蛋白、球蛋白", category: "血液检查", normal: "TP60-80, ALB35-55g/L", hint: "营养、肝脏合成功能" },
+            { name: "尿酸", category: "血液检查", normal: "<420μmol/L", hint: "高尿酸血症、痛风" },
+            { name: "游离脂肪酸", category: "血液检查", normal: "0.1-0.6 mmol/L", hint: "代谢、胰岛素抵抗评估" },
+            { name: "抗核抗体", category: "血液检查", normal: "阴性", hint: "阳性提示自身免疫病可能（如SLE）" },
+            { name: "类风湿因子", category: "血液检查", normal: "<20 IU/mL", hint: "升高提示类风湿关节炎" },
+            { name: "免疫球蛋白G", category: "血液检查", normal: "7-16 g/L", hint: "升高提示慢性感染或自身免疫病" },
+            { name: "免疫球蛋白A", category: "血液检查", normal: "0.7-4 g/L", hint: "升高提示黏膜免疫反应" },
+            { name: "免疫球蛋白M", category: "血液检查", normal: "0.4-2.3 g/L", hint: "升高提示近期感染" },
+            { name: "免疫球蛋白E", category: "血液检查", normal: "<100 IU/mL", hint: "升高提示过敏性疾病" },
+            { name: "补体C3", category: "血液检查", normal: "0.9-1.8 g/L", hint: "降低提示免疫复合物病" },
+            { name: "补体C4", category: "血液检查", normal: "0.1-0.4 g/L", hint: "降低提示免疫复合物病" },
+            { name: "抗dsDNA抗体", category: "血液检查", normal: "阴性", hint: "阳性高度提示SLE" },
+            { name: "抗Sm抗体", category: "血液检查", normal: "阴性", hint: "阳性高度提示SLE" },
+            { name: "抗RNP抗体", category: "血液检查", normal: "阴性", hint: "阳性提示混合性结缔组织病" },
+            { name: "抗SSA抗体", category: "血液检查", normal: "阴性", hint: "阳性提示干燥综合征或SLE" },
+            { name: "抗SSB抗体", category: "血液检查", normal: "阴性", hint: "阳性提示干燥综合征" },
+            { name: "抗Jo-1抗体", category: "血液检查", normal: "阴性", hint: "阳性提示皮肌炎/多肌炎" },
+            { name: "抗Scl-70抗体", category: "血液检查", normal: "阴性", hint: "阳性提示硬皮病" },
+            { name: "抗着丝点抗体", category: "血液检查", normal: "阴性", hint: "阳性提示CREST综合征" },
+            { name: "抗线粒体抗体", category: "血液检查", normal: "阴性", hint: "阳性提示原发性胆汁性肝硬化" },
+            { name: "抗平滑肌抗体", category: "血液检查", normal: "阴性", hint: "阳性提示自身免疫性肝炎" },
+            { name: "抗肝肾微粒体抗体", category: "血液检查", normal: "阴性", hint: "阳性提示自身免疫性肝炎2型" },
+            { name: "抗胃壁细胞抗体", category: "血液检查", normal: "阴性", hint: "阳性提示恶性贫血" },
+            { name: "抗CCP抗体", category: "血液检查", normal: "<5 RU/mL", hint: "类风湿关节炎特异性指标" },
+            { name: "HLA-B27", category: "血液检查", normal: "阴性", hint: "强直性脊柱炎筛查" },
+            { name: "抗中性粒细胞胞浆抗体ANCA", category: "血液检查", normal: "阴性", hint: "血管炎筛查" },
+            { name: "血清淀粉样蛋白A SAA", category: "血液检查", normal: "<10 mg/L", hint: "急性炎症敏感标志物" },
+            { name: "结核感染T细胞检测T-SPOT", category: "血液检查", normal: "阴性", hint: "潜伏结核感染筛查" },
+            { name: "AFP", category: "血液检查", normal: "<20 ng/mL", hint: "显著升高提示肝癌" },
+            { name: "CEA", category: "血液检查", normal: "<5 ng/mL", hint: "升高提示消化道肿瘤可能" },
+            { name: "CA125", category: "血液检查", normal: "<35 U/mL", hint: "升高提示卵巢癌可能" },
+            { name: "CA153", category: "血液检查", normal: "<31 U/mL", hint: "升高提示乳腺癌可能" },
+            { name: "CA199", category: "血液检查", normal: "<37 U/mL", hint: "升高提示胰腺癌或胆管癌可能" },
+            { name: "CA724", category: "血液检查", normal: "<6.9 U/mL", hint: "升高提示胃癌可能" },
+            { name: "CA242", category: "血液检查", normal: "<20 U/mL", hint: "升高提示消化道肿瘤" },
+            { name: "CA50", category: "血液检查", normal: "<20 U/mL", hint: "升高提示消化道肿瘤" },
+            { name: "PSA", category: "血液检查", normal: "<4 ng/mL", hint: "升高提示前列腺癌可能" },
+            { name: "fPSA", category: "血液检查", normal: ">0.16", hint: "fPSA/PSA<0.16提示前列腺癌风险增加" },
+            { name: "NSE", category: "血液检查", normal: "<16.3 ng/mL", hint: "升高提示小细胞肺癌或神经母细胞瘤" },
+            { name: "CYFRA21-1", category: "血液检查", normal: "<3.3 ng/mL", hint: "升高提示非小细胞肺癌" },
+            { name: "SCC", category: "血液检查", normal: "<1.5 ng/mL", hint: "升高提示鳞状细胞癌" },
+            { name: "proGRP", category: "血液检查", normal: "<50 pg/mL", hint: "升高提示小细胞肺癌" },
+            { name: "HE4", category: "血液检查", normal: "<70 pmol/L", hint: "升高提示卵巢癌，与CA125联用" },
+            { name: "异常凝血酶原PIVKA-II", category: "血液检查", normal: "<40 mAU/mL", hint: "肝癌新型标志物" },
+            { name: "胃蛋白酶原Ⅰ/Ⅱ", category: "血液检查", normal: "PGⅠ>70，比值>3", hint: "萎缩性胃炎、胃癌筛查" },
+            { name: "苏氨酸激酶TK1", category: "血液检查", normal: "<2 pmol/L", hint: "细胞增殖肿瘤筛查" },
+            { name: "β-HCG定量", category: "血液检查", normal: "<5IU/L", hint: "妊娠、生殖细胞肿瘤" },
+            { name: "可溶性间皮素相关蛋白SMRP", category: "血液检查", normal: "<15nmol/L", hint: "间皮瘤辅助筛查" },
+            { name: "内毒素", category: "血液检查", normal: "<0.1 EU/mL", hint: "升高提示革兰阴性菌感染" },
+            { name: "(1,3)-β-D-葡聚糖", category: "血液检查", normal: "<60 pg/mL", hint: "升高提示真菌感染（念珠菌、曲霉菌）" },
+            { name: "半乳甘露聚糖", category: "血液检查", normal: "<0.5", hint: "升高提示曲霉菌感染" },
+            { name: "EB病毒抗体", category: "血液检查", normal: "阴性", hint: "阳性提示EB病毒感染（传染性单核细胞增多症）" },
+            { name: "巨细胞病毒抗体", category: "血液检查", normal: "阴性", hint: "阳性提示CMV感染" },
+            { name: "风疹病毒抗体", category: "血液检查", normal: "阴性", hint: "阳性提示风疹病毒感染" },
+            { name: "弓形虫抗体", category: "血液检查", normal: "阴性", hint: "阳性提示弓形虫感染（孕期重要）" },
+            { name: "单纯疱疹病毒抗体", category: "血液检查", normal: "阴性", hint: "阳性提示HSV感染" },
+            { name: "肺炎支原体抗体", category: "血液检查", normal: "阴性", hint: "阳性提示肺炎支原体感染" },
+            { name: "肺炎衣原体抗体", category: "血液检查", normal: "阴性", hint: "阳性提示肺炎衣原体感染" },
+            { name: "军团菌抗体", category: "血液检查", normal: "阴性", hint: "阳性提示军团菌感染" },
+            { name: "乙肝五项定量", category: "血液检查", normal: "HBsAg阴性", hint: "乙型肝炎感染状态评估" },
+            { name: "乙肝病毒DNA定量", category: "血液检查", normal: "<100 IU/mL", hint: "乙肝病毒复制水平" },
+            { name: "丙肝抗体+HCV-RNA", category: "血液检查", normal: "阴性", hint: "丙型肝炎筛查" },
+            { name: "铁蛋白", category: "血液检查", normal: "男30-400, 女13-150 μg/L", hint: "降低提示缺铁性贫血" },
+            { name: "血清铁", category: "血液检查", normal: "男11-30, 女9-27 μmol/L", hint: "降低提示缺铁" },
+            { name: "总铁结合力", category: "血液检查", normal: "45-72 μmol/L", hint: "升高提示缺铁" },
+            { name: "转铁蛋白", category: "血液检查", normal: "2-3.6 g/L", hint: "升高提示缺铁" },
+            { name: "转铁蛋白饱和度", category: "血液检查", normal: "20-50%", hint: "<20%提示缺铁" },
+            { name: "叶酸", category: "血液检查", normal: ">6.8 nmol/L", hint: "降低提示巨幼细胞性贫血" },
+            { name: "维生素B12", category: "血液检查", normal: "138-652 pmol/L", hint: "降低提示巨幼细胞性贫血" },
+            { name: "促红细胞生成素", category: "血液检查", normal: "4-27 mIU/mL", hint: "升高提示贫血或低氧" },
+            { name: "血红蛋白电泳", category: "血液检查", normal: "HbA>95%，HbA2 2.5%-3.5%", hint: "地中海贫血筛查" },
+            { name: "G6PD酶活性", category: "血液检查", normal: "正常", hint: "蚕豆病筛查" },
+            { name: "促甲状腺激素", category: "血液检查", normal: "0.27-4.2 mIU/L", hint: "升高提示甲减，降低提示甲亢" },
+            { name: "游离T3", category: "血液检查", normal: "3.1-6.8 pmol/L", hint: "升高提示甲亢" },
+            { name: "游离T4", category: "血液检查", normal: "12-22 pmol/L", hint: "升高提示甲亢" },
+            { name: "总T3", category: "血液检查", normal: "1.3-3.1 nmol/L", hint: "升高提示甲亢" },
+            { name: "总T4", category: "血液检查", normal: "66-181 nmol/L", hint: "升高提示甲亢" },
+            { name: "甲状腺球蛋白抗体", category: "血液检查", normal: "<115 IU/mL", hint: "升高提示桥本甲状腺炎" },
+            { name: "甲状腺过氧化物酶抗体", category: "血液检查", normal: "<34 IU/mL", hint: "升高提示自身免疫性甲状腺炎" },
+            { name: "促甲状腺激素受体抗体", category: "血液检查", normal: "<1.75 IU/L", hint: "升高提示Graves病" },
+            { name: "皮质醇", category: "血液检查", normal: "晨8-16 μg/dL", hint: "升高提示库欣综合征" },
+            { name: "ACTH", category: "血液检查", normal: "7.2-63.3 pg/mL", hint: "升高提示库欣病或异位ACTH综合征" },
+            { name: "生长激素", category: "血液检查", normal: "<5 ng/mL", hint: "升高提示肢端肥大症" },
+            { name: "胰岛素样生长因子-1", category: "血液检查", normal: "75-216 ng/mL", hint: "升高提示肢端肥大症" },
+            { name: "胰岛素", category: "血液检查", normal: "2.6-24.9 μIU/mL", hint: "升高提示胰岛素抵抗" },
+            { name: "C肽", category: "血液检查", normal: "0.3-3.73 ng/mL", hint: "评估胰岛β细胞功能" },
+            { name: "胰高血糖素", category: "血液检查", normal: "20-100 pg/mL", hint: "升高提示胰高血糖素瘤" },
+            { name: "胃泌素", category: "血液检查", normal: "<100 pg/mL", hint: "升高提示胃泌素瘤" },
+            { name: "降钙素", category: "血液检查", normal: "<10 pg/mL", hint: "升高提示甲状腺髓样癌" },
+            { name: "甲状旁腺激素", category: "血液检查", normal: "15-65 pg/mL", hint: "升高提示甲旁亢" },
+            { name: "25-羟维生素D", category: "血液检查", normal: ">30 ng/mL", hint: "<20提示维生素D缺乏" },
+            { name: "1,25-二羟维生素D", category: "血液检查", normal: "18-78 pg/mL", hint: "升高提示肉芽肿性疾病" },
+            { name: "肾素、血管紧张素Ⅱ、醛固酮", category: "血液检查", normal: "卧位参考范围", hint: "原发性醛固酮增多症筛查" },
+            { name: "雌二醇", category: "血液检查", normal: "视月经周期", hint: "异常提示卵巢功能紊乱" },
+            { name: "孕酮", category: "血液检查", normal: "视月经周期", hint: "排卵期升高，异常提示排卵障碍" },
+            { name: "睾酮", category: "血液检查", normal: "男>10, 女0.5-2.6 nmol/L", hint: "男性降低提示性腺功能减退" },
+            { name: "游离睾酮", category: "血液检查", normal: "男>0.17, 女>0.01 nmol/L", hint: "更准确反映雄激素水平" },
+            { name: "雄烯二酮", category: "血液检查", normal: "男1.7-6.5, 女1.5-7.8 nmol/L", hint: "升高提示多囊卵巢综合征" },
+            { name: "脱氢表雄酮", category: "血液检查", normal: "男5-55, 女2-28 μmol/L", hint: "升高提示肾上腺源雄激素过多" },
+            { name: "性激素结合球蛋白", category: "血液检查", normal: "男13-71, 女18-114 nmol/L", hint: "异常影响游离激素水平" },
+            { name: "促黄体生成素", category: "血液检查", normal: "视月经周期", hint: "异常提示垂体或卵巢功能异常" },
+            { name: "促卵泡激素", category: "血液检查", normal: "视月经周期", hint: "升高提示卵巢储备下降" },
+            { name: "泌乳素", category: "血液检查", normal: "男<20, 女<25 ng/mL", hint: "升高提示高泌乳素血症" },
+            { name: "人绒毛膜促性腺激素", category: "血液检查", normal: "<5 IU/L", hint: "升高提示妊娠或肿瘤" },
+            { name: "抗缪勒管激素", category: "血液检查", normal: "2-6 ng/mL", hint: "反映卵巢储备功能" },
+            { name: "血气分析", category: "血液检查", normal: "pH 7.35-7.45, PaCO₂ 35-45, PaO₂ 80-100, HCO₃⁻ 22-27",
+                hint: "pH<7.35酸中毒，>7.45碱中毒" },
+            { name: "动脉血氧分压", category: "血液检查", normal: "80-100 mmHg", hint: "<80提示低氧血症" },
+            { name: "动脉血二氧化碳分压", category: "血液检查", normal: "35-45 mmHg", hint: ">45提示呼吸性酸中毒" },
+            { name: "碳酸氢根", category: "血液检查", normal: "22-27 mmol/L", hint: "异常提示代谢性酸碱失衡" },
+            { name: "碱剩余", category: "血液检查", normal: "-3 ~ +3 mmol/L", hint: "异常提示代谢性酸碱失衡" },
+            { name: "阴离子间隙", category: "血液检查", normal: "8-16 mmol/L", hint: "升高提示代酸" },
+            { name: "血乳酸", category: "血液检查", normal: "0.5-2.2 mmol/L", hint: "升高提示组织缺氧" },
+            { name: "血氨", category: "血液检查", normal: "11-51 μmol/L", hint: "升高提示肝性脑病" },
+            { name: "地高辛血药浓度", category: "治疗药物监测", normal: "0.8-2.0ng/mL", hint: "心衰、房颤用药监测" },
+            { name: "环孢素浓度", category: "治疗药物监测", normal: "依据移植类型调整", hint: "器官移植抗排异监测" },
+            { name: "他克莫司浓度", category: "治疗药物监测", normal: "专科目标范围", hint: "免疫抑制剂血药监测" },
+            { name: "丙戊酸钠浓度", category: "治疗药物监测", normal: "50-100μg/mL", hint: "癫痫、心境稳定剂监测" },
+            { name: "卡马西平浓度", category: "治疗药物监测", normal: "4-12μg/mL", hint: "抗癫痫药物监测" },
+            { name: "骨钙素", category: "骨代谢", normal: "11-48ng/mL", hint: "成骨细胞活性" },
+            { name: "β-CTX", category: "骨代谢", normal: "绝经前<0.57ng/mL", hint: "骨吸收标志物" },
+            { name: "PINP", category: "骨代谢", normal: "16-76ng/mL", hint: "骨形成标志物" },
+            { name: "S100β蛋白", category: "神经标志物", normal: "<0.105μg/L", hint: "脑损伤、脑出血评估" },
+            { name: "神经元特异性烯醇化酶NSE", category: "神经标志物", normal: "<16.3ng/mL", hint: "脑损伤、肿瘤双重指标" },
+            { name: "胸部X光", category: "影像学", normal: "心肺未见明显异常", hint: "可发现肺炎、结核、肿瘤等" },
+            { name: "腹部X光", category: "影像学", normal: "未见异常阴影及气液平", hint: "可发现肠梗阻、穿孔等" },
+            { name: "骨关节X光", category: "影像学", normal: "骨质结构完整，未见骨折", hint: "用于骨折、关节炎诊断" },
+            { name: "腰椎X光", category: "影像学", normal: "腰椎生理曲度存在", hint: "用于腰椎间盘突出、骨折诊断" },
+            { name: "颈椎X光", category: "影像学", normal: "颈椎生理曲度存在", hint: "用于颈椎病诊断" },
+            { name: "骨盆X光", category: "影像学", normal: "骨盆环完整", hint: "用于骨盆骨折诊断" },
+            { name: "肩关节X光", category: "影像学", normal: "关节对位良好", hint: "肩袖损伤、骨折初筛" },
+            { name: "膝关节X光", category: "影像学", normal: "关节间隙正常", hint: "骨关节炎筛查" },
+            { name: "鼻骨X光", category: "影像学", normal: "骨质连续", hint: "鼻骨骨折" },
+            { name: "CT平扫", category: "影像学", normal: "未见明显异常密度灶", hint: "可发现肿瘤、炎症等" },
+            { name: "CT增强", category: "影像学", normal: "未见明显异常强化灶", hint: "可鉴别肿瘤与炎症" },
+            { name: "CTPA", category: "影像学", normal: "肺动脉未见栓塞征象", hint: "用于诊断肺栓塞" },
+            { name: "冠脉CTA", category: "影像学", normal: "冠脉未见明显狭窄", hint: "用于冠心病筛查" },
+            { name: "头颈CTA", category: "影像学", normal: "颅内血管未见明显狭窄", hint: "用于脑血管病诊断" },
+            { name: "头颅CT", category: "影像学", normal: "颅脑未见明显异常", hint: "用于脑出血、脑梗诊断" },
+            { name: "胸部CT", category: "影像学", normal: "双肺未见明显异常", hint: "比X光更精确，用于肺结节筛查" },
+            { name: "腹部CT", category: "影像学", normal: "腹部脏器未见明显异常", hint: "用于肝、胆、胰、脾、肾疾病" },
+            { name: "盆腔CT", category: "影像学", normal: "盆腔脏器未见明显异常", hint: "用于子宫、卵巢、膀胱疾病" },
+            { name: "脊柱CT", category: "影像学", normal: "脊柱骨质未见明显异常", hint: "用于骨折、椎间盘突出" },
+            { name: "四肢CT", category: "影像学", normal: "四肢骨质未见明显异常", hint: "用于四肢骨折、肿瘤" },
+            { name: "PET-CT", category: "影像学", normal: "未见明显异常代谢增高灶", hint: "用于肿瘤筛查和分期" },
+            { name: "颞骨CT", category: "影像学", normal: "中耳内耳结构完整", hint: "中耳炎、耳硬化症" },
+            { name: "鼻窦CT", category: "影像学", normal: "鼻窦窦腔清晰", hint: "鼻窦炎、鼻息肉" },
+            { name: "核磁共振", category: "影像学", normal: "未见明显异常信号", hint: "软组织分辨率高，用于中枢神经系统" },
+            { name: "MRI增强", category: "影像学", normal: "未见明显异常强化", hint: "用于肿瘤鉴别" },
+            { name: "MRA", category: "影像学", normal: "脑血管未见明显异常", hint: "用于脑血管病诊断" },
+            { name: "头颅MRI", category: "影像学", normal: "颅脑未见明显异常", hint: "对脑部病变更敏感" },
+            { name: "脊柱MRI", category: "影像学", normal: "脊柱及脊髓未见明显异常", hint: "用于椎间盘、脊髓病变" },
+            { name: "关节MRI", category: "影像学", normal: "关节结构未见明显异常", hint: "用于关节韧带、半月板损伤" },
+            { name: "腹部MRI", category: "影像学", normal: "腹部脏器未见明显异常", hint: "用于肝脏、胰腺等病变" },
+            { name: "盆腔MRI", category: "影像学", normal: "盆腔脏器未见明显异常", hint: "用于妇科肿瘤诊断" },
+            { name: "内耳水成像", category: "影像学", normal: "内听道结构正常", hint: "梅尼埃病、听神经瘤" },
+            { name: "乳腺MRI", category: "影像学", normal: "未见异常强化病灶", hint: "乳腺癌高危筛查" },
+            { name: "超声心动图", category: "影像学", normal: "心脏结构及功能未见异常, LVEF>55%",
+                hint: "评估心脏结构、瓣膜、心功能" },
+            { name: "颈部血管超声", category: "影像学", normal: "颈动脉内膜光滑，未见斑块", hint: "评估动脉粥样硬化" },
+            { name: "腹部超声", category: "影像学", normal: "肝胆胰脾肾未见明显异常", hint: "常规体检首选" },
+            { name: "泌尿系超声", category: "影像学", normal: "双肾大小形态正常", hint: "用于结石、积水等" },
+            { name: "甲状腺超声", category: "影像学", normal: "甲状腺大小正常，未见结节", hint: "用于甲状腺结节筛查" },
+            { name: "乳腺超声", category: "影像学", normal: "双侧乳腺未见明显占位", hint: "用于乳腺结节筛查" },
+            { name: "妇科超声", category: "影像学", normal: "子宫附件未见明显异常", hint: "用于妇科疾病诊断" },
+            { name: "产科超声", category: "影像学", normal: "胎儿发育正常", hint: "孕期常规检查" },
+            { name: "阴囊超声", category: "影像学", normal: "睾丸及附睾未见明显异常", hint: "用于睾丸疾病" },
+            { name: "前列腺超声", category: "影像学", normal: "前列腺大小正常，未见占位", hint: "用于前列腺增生、肿瘤" },
+            { name: "肝脏超声", category: "影像学", normal: "肝脏大小正常，回声均匀", hint: "用于脂肪肝、肝硬化" },
+            { name: "胆囊超声", category: "影像学", normal: "胆囊大小正常，壁光滑", hint: "用于胆结石、胆囊炎" },
+            { name: "胰腺超声", category: "影像学", normal: "胰腺大小正常，回声均匀", hint: "用于胰腺炎、肿瘤" },
+            { name: "脾脏超声", category: "影像学", normal: "脾脏大小正常", hint: "用于脾大、脾肿瘤" },
+            { name: "肾脏超声", category: "影像学", normal: "双肾大小正常，未见积水", hint: "用于肾结石、肾积水" },
+            { name: "输尿管超声", category: "影像学", normal: "输尿管未见扩张", hint: "用于输尿管结石" },
+            { name: "膀胱超声", category: "影像学", normal: "膀胱壁光滑，未见占位", hint: "用于膀胱肿瘤" },
+            { name: "肾上腺超声", category: "影像学", normal: "肾上腺未见明显异常", hint: "用于肾上腺肿瘤" },
+            { name: "淋巴结超声", category: "影像学", normal: "淋巴结大小正常", hint: "用于淋巴结肿大" },
+            { name: "体表包块超声", category: "影像学", normal: "未见明显异常", hint: "用于体表肿物" },
+            { name: "下肢静脉超声", category: "影像学", normal: "静脉通畅，无血栓", hint: "下肢深静脉血栓筛查" },
+            { name: "上肢血管超声", category: "影像学", normal: "血管通畅", hint: "上肢动静脉病变" },
+            { name: "眼球超声", category: "影像学", normal: "眼球结构完整", hint: "视网膜脱离、眼内异物" },
+            { name: "关节超声", category: "影像学", normal: "滑膜无增厚，韧带连续", hint: "滑膜炎、肌腱损伤" },
+            { name: "经颅多普勒TCD", category: "影像学", normal: "颅内血流速度正常", hint: "脑血管痉挛、脑供血评估" },
+            { name: "心电图", category: "功能检查", normal: "窦性心律，正常心电图", hint: "筛查心律失常、心肌缺血" },
+            { name: "动态心电图", category: "功能检查", normal: "24h总心搏8-12万次", hint: "捕捉阵发性心律失常" },
+            { name: "运动平板", category: "功能检查", normal: "运动中未见ST段改变", hint: "筛查冠心病" },
+            { name: "肺功能", category: "功能检查", normal: "FVC>80%, FEV1/FVC>70%", hint: "评估通气功能，COPD诊断" },
+            { name: "脑电图", category: "功能检查", normal: "未见异常放电", hint: "用于癫痫诊断" },
+            { name: "肌电图", category: "功能检查", normal: "未见神经源性或肌源性损害", hint: "评估神经肌肉疾病" },
+            { name: "眼底检查", category: "功能检查", normal: "眼底未见异常", hint: "用于高血压、糖尿病视网膜病变" },
+            { name: "听力测试", category: "功能检查", normal: "双耳听力正常", hint: "评估听力损失" },
+            { name: "眼压检查", category: "功能检查", normal: "10-21 mmHg", hint: "用于青光眼筛查" },
+            { name: "视野检查", category: "功能检查", normal: "未见明显视野缺损", hint: "用于青光眼、视神经疾病" },
+            { name: "视力检查", category: "功能检查", normal: "矫正视力≥1.0", hint: "评估视力" },
+            { name: "色觉检查", category: "功能检查", normal: "正常", hint: "用于色盲筛查" },
+            { name: "神经传导速度", category: "功能检查", normal: "运动传导速度>50m/s", hint: "评估周围神经病变" },
+            { name: "诱发电位", category: "功能检查", normal: "潜伏期正常", hint: "用于多发性硬化等" },
+            { name: "平衡功能检查", category: "功能检查", normal: "正常", hint: "评估前庭功能" },
+            { name: "步态分析", category: "功能检查", normal: "正常", hint: "用于神经系统疾病" },
+            { name: "关节活动度", category: "功能检查", normal: "正常", hint: "评估关节功能" },
+            { name: "肌力测定", category: "功能检查", normal: "5级", hint: "评估肌肉力量" },
+            { name: "感觉功能检查", category: "功能检查", normal: "正常", hint: "评估感觉神经功能" },
+            { name: "反射检查", category: "功能检查", normal: "正常", hint: "评估神经系统" },
+            { name: "碳13呼气试验", category: "功能检查", normal: "阴性", hint: "幽门螺杆菌无创检测" },
+            { name: "碳14呼气试验", category: "功能检查", normal: "阴性", hint: "幽门螺杆菌检测" },
+            { name: "骨密度检测", category: "功能检查", normal: "T值≥-1.0", hint: "骨质疏松筛查" },
+            { name: "睡眠监测PSG", category: "功能检查", normal: "无睡眠呼吸暂停", hint: "阻塞性睡眠呼吸暂停诊断" },
+            { name: "食道pH监测", category: "功能检查", normal: "酸暴露时间正常", hint: "胃食管反流病" },
+            { name: "胃镜", category: "内镜检查", normal: "胃黏膜光滑，未见溃疡", hint: "诊断胃炎、溃疡、肿瘤" },
+            { name: "肠镜", category: "内镜检查", normal: "肠黏膜光滑，未见息肉", hint: "诊断肠炎、息肉、肿瘤" },
+            { name: "支气管镜", category: "内镜检查", normal: "气道通畅，黏膜光滑", hint: "诊断肺癌、感染" },
+            { name: "喉镜", category: "内镜检查", normal: "咽喉部黏膜光滑", hint: "诊断喉炎、声带病变" },
+            { name: "阴道镜", category: "内镜检查", normal: "宫颈光滑，未见异常", hint: "用于宫颈病变" },
+            { name: "膀胱镜", category: "内镜检查", normal: "膀胱黏膜光滑", hint: "诊断膀胱肿瘤" },
+            { name: "鼻内镜", category: "内镜检查", normal: "鼻腔通畅，黏膜光滑", hint: "诊断鼻炎、鼻窦炎" },
+            { name: "耳内镜", category: "内镜检查", normal: "鼓膜完整", hint: "诊断中耳炎" },
+            { name: "宫腔镜", category: "内镜检查", normal: "宫腔形态正常", hint: "诊断子宫内膜病变" },
+            { name: "关节镜", category: "内镜检查", normal: "关节内未见明显异常", hint: "诊断关节病变" },
+            { name: "超声内镜EUS", category: "内镜检查", normal: "管壁层次清晰", hint: "消化道黏膜下肿瘤" },
+            { name: "胶囊内镜", category: "内镜检查", normal: "小肠黏膜未见病变", hint: "小肠疾病筛查" },
+            { name: "咽拭子", category: "微生物", normal: "无致病菌生长", hint: "检测呼吸道病原体" },
+            { name: "流感病毒检测", category: "微生物", normal: "阴性", hint: "用于流感诊断" },
+            { name: "新冠病毒检测", category: "微生物", normal: "阴性", hint: "用于新冠诊断" },
+            { name: "痰培养", category: "微生物", normal: "无致病菌生长", hint: "用于肺炎病原体检测" },
+            { name: "血培养", category: "微生物", normal: "无致病菌生长", hint: "检测菌血症" },
+            { name: "尿培养", category: "微生物", normal: "无致病菌生长", hint: "检测泌尿系感染" },
+            { name: "脑脊液培养", category: "微生物", normal: "无致病菌生长", hint: "检测脑膜炎" },
+            { name: "结核杆菌检测", category: "微生物", normal: "阴性", hint: "用于结核诊断" },
+            { name: "幽门螺杆菌检测", category: "微生物", normal: "阴性", hint: "用于胃炎、胃溃疡病因诊断" },
+            { name: "肺炎支原体培养", category: "微生物", normal: "阴性", hint: "检测支原体肺炎" },
+            { name: "衣原体检测", category: "微生物", normal: "阴性", hint: "检测衣原体感染" },
+            { name: "淋球菌检测", category: "微生物", normal: "阴性", hint: "检测淋病" },
+            { name: "梅毒螺旋体检测", category: "微生物", normal: "阴性", hint: "检测梅毒" },
+            { name: "HIV检测", category: "微生物", normal: "阴性", hint: "检测艾滋病" },
+            { name: "肝炎病毒检测", category: "微生物", normal: "阴性", hint: "检测甲/乙/丙肝" },
+            { name: "真菌涂片+培养", category: "微生物", normal: "无真菌生长", hint: "皮肤、深部真菌感染" },
+            { name: "多重呼吸道病原体核酸联检", category: "微生物", normal: "阴性", hint: "甲乙流、腺病毒、呼吸道合胞病毒" },
+            { name: "粪便病原体核酸检测", category: "微生物", normal: "阴性", hint: "诺如、轮状病毒、沙门菌" },
+            { name: "病理活检", category: "病理检查", normal: "未见恶性细胞", hint: "金标准，用于肿瘤确诊" },
+            { name: "细胞学检查", category: "病理检查", normal: "未见恶性细胞", hint: "用于肿瘤筛查" },
+            { name: "骨髓穿刺", category: "病理检查", normal: "骨髓增生活跃", hint: "诊断血液病" },
+            { name: "淋巴结穿刺", category: "病理检查", normal: "未见恶性细胞", hint: "诊断淋巴瘤" },
+            { name: "肝脏穿刺", category: "病理检查", normal: "肝组织未见明显异常", hint: "诊断肝炎、肝硬化" },
+            { name: "肾脏穿刺", category: "病理检查", normal: "肾组织未见明显异常", hint: "诊断肾小球肾炎" },
+            { name: "皮肤活检", category: "病理检查", normal: "皮肤组织未见明显异常", hint: "诊断皮肤病" },
+            { name: "肌肉活检", category: "病理检查", normal: "肌肉组织未见明显异常", hint: "诊断肌炎" },
+            { name: "宫颈液基细胞学TCT", category: "病理检查", normal: "未见上皮内病变", hint: "宫颈癌筛查" },
+            { name: "高危型HPV核酸检测", category: "病理检查", normal: "阴性", hint: "宫颈癌病因筛查" },
+            { name: "过敏原全套", category: "变态反应", normal: "未见明确过敏原", hint: "检测常见过敏原" },
+            { name: "IgE", category: "变态反应", normal: "<100 IU/mL", hint: "升高提示过敏体质" },
+            { name: "食物过敏原检测", category: "变态反应", normal: "阴性", hint: "检测食物过敏" },
+            { name: "吸入性过敏原检测", category: "变态反应", normal: "阴性", hint: "检测花粉、尘螨等" },
+            { name: "药物过敏原检测", category: "变态反应", normal: "阴性", hint: "检测药物过敏" },
+            { name: "接触性过敏原检测", category: "变态反应", normal: "阴性", hint: "检测接触性皮炎" },
+            { name: "嗜酸性粒细胞阳离子蛋白ECP", category: "变态反应", normal: "<13μg/L", hint: "过敏性炎症标志物" },
+            { name: "特异性IgG食物不耐受", category: "变态反应", normal: "阴性", hint: "慢性食物不耐受筛查" },
+            { name: "基因检测", category: "分子诊断", normal: "未见致病性变异", hint: "用于遗传病诊断" },
+            { name: "染色体核型分析", category: "分子诊断", normal: "46,XY 或 46,XX", hint: "诊断染色体疾病" },
+            { name: "基因芯片检测", category: "分子诊断", normal: "未见异常", hint: "检测染色体微缺失" },
+            { name: "FISH检测", category: "分子诊断", normal: "未见异常", hint: "检测特定基因异常" },
+            { name: "PCR检测", category: "分子诊断", normal: "阴性", hint: "检测病原体DNA" },
+            { name: "测序检测", category: "分子诊断", normal: "未见致病性变异", hint: "基因测序" },
+            { name: "肿瘤液体活检ctDNA", category: "分子诊断", normal: "未见突变", hint: "肿瘤靶向用药筛查" },
+            { name: "耐药基因检测", category: "分子诊断", normal: "无耐药突变", hint: "细菌、病毒耐药检测" },
+            { name: "骨扫描", category: "核医学", normal: "未见异常放射性浓聚", hint: "用于骨转移、骨折诊断" },
+            { name: "甲状腺扫描", category: "核医学", normal: "甲状腺位置及形态正常", hint: "诊断甲状腺功能、结节" },
+            { name: "心肌灌注显像", category: "核医学", normal: "未见明显缺血灶", hint: "诊断冠心病心肌缺血" },
+            { name: "肺灌注显像", category: "核医学", normal: "双肺血流灌注正常", hint: "诊断肺栓塞" },
+            { name: "肾动态显像", category: "核医学", normal: "双肾血流及功能正常", hint: "评估肾功能" },
+            { name: "脑灌注显像", category: "核医学", normal: "脑血流分布正常", hint: "评估脑缺血" },
+            { name: "全身PET-CT", category: "核医学", normal: "未见异常代谢增高灶", hint: "肿瘤筛查和分期" },
+            { name: "SPECT-CT", category: "核医学", normal: "未见异常", hint: "功能与解剖融合成像" },
+            { name: "甲状旁腺显像", category: "核医学", normal: "未见异常浓聚灶", hint: "甲状旁腺腺瘤定位" },
+            { name: "肝胆动态显像", category: "核医学", normal: "胆道排泄通畅", hint: "胆道闭锁、胆汁淤积" }
+        ];
+
+        // ============================================================
+        //  💊 药品数据库 (280+种) — 完整移植自外部文件
+        // ============================================================
+        const drugDatabase = [
+            { name: "感冒灵", category: "感冒", tags: ["感冒", "发热", "头痛"], dosage: "一次1袋，一日3次", spec: "10g/袋",
+                manufacturer: "华润三九" },
+            { name: "板蓝根", category: "感冒", tags: ["感冒", "咽喉痛", "预防"], dosage: "一次1袋，一日3次", spec: "10g/袋",
+                manufacturer: "广州白云山" },
+            { name: "连花清瘟", category: "感冒", tags: ["感冒", "发热", "咳嗽"], dosage: "一次4粒，一日3次", spec: "0.35g/粒",
+                manufacturer: "以岭药业" },
+            { name: "感康", category: "感冒", tags: ["感冒", "发热", "流涕"], dosage: "一次1片，一日2次", spec: "复方",
+                manufacturer: "修正药业" },
+            { name: "复方氨酚烷胺", category: "感冒", tags: ["感冒", "发热", "头痛"], dosage: "一次1粒，一日2次", spec: "复方",
+                manufacturer: "东北制药" },
+            { name: "氨咖黄敏", category: "感冒", tags: ["感冒", "发热", "流涕"], dosage: "一次1粒，一日3次", spec: "复方",
+                manufacturer: "哈药集团" },
+            { name: "维C银翘片", category: "感冒", tags: ["感冒", "咽喉痛", "发热"], dosage: "一次2片，一日3次", spec: "复方",
+                manufacturer: "广州白云山" },
+            { name: "双黄连口服液", category: "感冒", tags: ["感冒", "发热", "咳嗽"], dosage: "一次1支，一日3次", spec: "10ml/支",
+                manufacturer: "三精制药" },
+            { name: "复方感冒灵", category: "感冒", tags: ["感冒", "发热"], dosage: "一次2片，一日3次", spec: "复方",
+                manufacturer: "华润三九" },
+            { name: "感冒清热颗粒", category: "感冒", tags: ["感冒", "风寒"], dosage: "一次1袋，一日2次", spec: "12g/袋",
+                manufacturer: "同仁堂" },
+            { name: "银翘解毒片", category: "感冒", tags: ["感冒", "风热", "咽喉痛"], dosage: "一次4片，一日3次", spec: "复方",
+                manufacturer: "同仁堂" },
+            { name: "桑菊感冒片", category: "感冒", tags: ["感冒", "咳嗽"], dosage: "一次4片，一日3次", spec: "复方",
+                manufacturer: "太极集团" },
+            { name: "奥司他韦", category: "抗病毒", tags: ["流感", "病毒", "发热"], dosage: "一次75mg，一日2次", spec: "75mg/粒",
+                manufacturer: "罗氏制药" },
+            { name: "利巴韦林", category: "抗病毒", tags: ["病毒", "感染"], dosage: "一次0.15g，一日3次", spec: "0.15g/片",
+                manufacturer: "华中药业" },
+            { name: "阿昔洛韦", category: "抗病毒", tags: ["病毒", "疱疹"], dosage: "一次200mg，一日5次", spec: "200mg/片",
+                manufacturer: "丽珠集团" },
+            { name: "磷酸奥司他韦", category: "抗病毒", tags: ["流感", "病毒"], dosage: "一次75mg，一日2次", spec: "75mg/粒",
+                manufacturer: "东阳光药" },
+            { name: "更昔洛韦", category: "抗病毒", tags: ["病毒", "CMV"], dosage: "遵医嘱静脉滴注", spec: "250mg/瓶",
+                manufacturer: "武汉人福" },
+            { name: "伐昔洛韦", category: "抗病毒", tags: ["病毒", "疱疹"], dosage: "一次300mg，一日2次", spec: "300mg/片",
+                manufacturer: "葛兰素史克" },
+            { name: "丙酚替诺福韦", category: "抗病毒", tags: ["乙肝", "肝炎病毒"], dosage: "一次25mg，一日1次", spec: "25mg/片",
+                manufacturer: "吉利德" },
+            { name: "恩替卡韦", category: "抗病毒", tags: ["慢性乙肝"], dosage: "一次0.5mg，一日1次空腹", spec: "0.5mg/片",
+                manufacturer: "正大天晴" },
+            { name: "索磷布韦维帕他韦", category: "抗病毒", tags: ["丙肝"], dosage: "一次1片，一日1次", spec: "复方",
+                manufacturer: "吉利德" },
+            { name: "对乙酰氨基酚", category: "退烧止痛", tags: ["发热", "头痛", "疼痛"], dosage: "一次500mg，一日不超过4次",
+                spec: "500mg/片", manufacturer: "强生" },
+            { name: "布洛芬", category: "退烧止痛", tags: ["发热", "疼痛", "消炎"], dosage: "一次200-400mg，一日3次",
+                spec: "200mg/片", manufacturer: "中美史克" },
+            { name: "阿司匹林", category: "退烧止痛", tags: ["疼痛", "消炎", "抗凝"], dosage: "一次100mg，一日1次",
+                spec: "100mg/片", manufacturer: "拜耳" },
+            { name: "萘普生", category: "退烧止痛", tags: ["疼痛", "消炎"], dosage: "一次250mg，一日2次", spec: "250mg/片",
+                manufacturer: "先声药业" },
+            { name: "双氯芬酸钠", category: "退烧止痛", tags: ["疼痛", "消炎"], dosage: "一次50mg，一日2次", spec: "50mg/片",
+                manufacturer: "北京诺华" },
+            { name: "去痛片", category: "退烧止痛", tags: ["疼痛", "头痛"], dosage: "一次1片，一日3次", spec: "复方",
+                manufacturer: "华南药业" },
+            { name: "塞来昔布", category: "退烧止痛", tags: ["疼痛", "消炎", "关节炎"], dosage: "一次200mg，一日1次",
+                spec: "200mg/粒", manufacturer: "辉瑞" },
+            { name: "洛索洛芬钠", category: "退烧止痛", tags: ["疼痛", "消炎"], dosage: "一次60mg，一日3次", spec: "60mg/片",
+                manufacturer: "第一三共" },
+            { name: "奥美拉唑", category: "消化", tags: ["胃痛", "胃酸", "胃炎"], dosage: "一次20mg，一日1次", spec: "20mg/粒",
+                manufacturer: "阿斯利康" },
+            { name: "铝碳酸镁", category: "消化", tags: ["胃痛", "胃酸", "反酸"], dosage: "一次1-2片，一日3次", spec: "0.5g/片",
+                manufacturer: "拜耳" },
+            { name: "吗丁啉", category: "消化", tags: ["恶心", "呕吐", "消化不良"], dosage: "一次10mg，一日3次", spec: "10mg/片",
+                manufacturer: "西安杨森" },
+            { name: "蒙脱石散", category: "消化", tags: ["腹泻", "肠炎"], dosage: "一次1袋，一日3次", spec: "3g/袋",
+                manufacturer: "博福-益普生" },
+            { name: "莫沙必利", category: "消化", tags: ["消化不良", "胃动力"], dosage: "一次5mg，一日3次", spec: "5mg/片",
+                manufacturer: "鲁南制药" },
+            { name: "多酶片", category: "消化", tags: ["消化不良", "酶"], dosage: "一次2片，一日3次", spec: "复方",
+                manufacturer: "江中药业" },
+            { name: "胃复安", category: "消化", tags: ["恶心", "呕吐", "止吐"], dosage: "一次5mg，一日3次", spec: "5mg/片",
+                manufacturer: "上海信谊" },
+            { name: "复方消化酶", category: "消化", tags: ["消化不良", "酶"], dosage: "一次1粒，一日3次", spec: "复方",
+                manufacturer: "星鲨制药" },
+            { name: "瑞巴派特", category: "消化", tags: ["胃炎", "溃疡"], dosage: "一次100mg，一日3次", spec: "100mg/片",
+                manufacturer: "浙江大冢" },
+            { name: "法莫替丁", category: "消化", tags: ["胃酸", "胃炎"], dosage: "一次20mg，一日2次", spec: "20mg/片",
+                manufacturer: "上海信谊" },
+            { name: "雷贝拉唑", category: "消化", tags: ["胃酸", "胃痛"], dosage: "一次10mg，一日1次", spec: "10mg/片",
+                manufacturer: "卫材" },
+            { name: "泮托拉唑", category: "消化", tags: ["胃酸", "胃痛"], dosage: "一次40mg，一日1次", spec: "40mg/片",
+                manufacturer: "武田" },
+            { name: "复方胃友", category: "消化", tags: ["胃痛", "胃酸"], dosage: "一次2片，一日3次", spec: "复方",
+                manufacturer: "广州白云山" },
+            { name: "保和丸", category: "消化", tags: ["消化不良", "积食"], dosage: "一次8丸，一日3次", spec: "复方",
+                manufacturer: "同仁堂" },
+            { name: "健胃消食片", category: "消化", tags: ["消化不良", "积食"], dosage: "一次3片，一日3次", spec: "复方",
+                manufacturer: "江中药业" },
+            { name: "匹维溴铵", category: "消化", tags: ["肠易激、腹痛"], dosage: "一次50mg，一日3次", spec: "50mg/片",
+                manufacturer: "博福益普生" },
+            { name: "双歧杆菌三联活菌", category: "消化", tags: ["肠道菌群失调、腹泻"], dosage: "一次2粒，一日3次", spec: "0.21g/粒",
+                manufacturer: "上海信谊" },
+            { name: "利福昔明", category: "消化", tags: ["肠道感染、肠易激"], dosage: "一次200mg，一日3次", spec: "200mg/片",
+                manufacturer: "意大利益普生" },
+            { name: "阿莫西林", category: "抗生素", tags: ["感染", "肺炎", "炎症"], dosage: "一次500mg，一日3次", spec: "0.5g/粒",
+                manufacturer: "联邦制药" },
+            { name: "头孢克肟", category: "抗生素", tags: ["感染", "肺炎", "炎症"], dosage: "一次100mg，一日2次",
+                spec: "100mg/粒", manufacturer: "白云山" },
+            { name: "诺氟沙星", category: "抗生素", tags: ["感染", "肠炎", "泌尿"], dosage: "一次400mg，一日2次",
+                spec: "0.4g/片", manufacturer: "扬子江药业" },
+            { name: "阿奇霉素", category: "抗生素", tags: ["感染", "肺炎", "炎症"], dosage: "一次500mg，一日1次",
+                spec: "0.5g/片", manufacturer: "辉瑞" },
+            { name: "克拉霉素", category: "抗生素", tags: ["感染", "呼吸道"], dosage: "一次250mg，一日2次", spec: "250mg/片",
+                manufacturer: "雅培" },
+            { name: "左氧氟沙星", category: "抗生素", tags: ["感染", "泌尿", "呼吸道"], dosage: "一次500mg，一日1次",
+                spec: "0.5g/片", manufacturer: "第一三共" },
+            { name: "克林霉素", category: "抗生素", tags: ["感染", "厌氧菌"], dosage: "一次300mg，一日3次", spec: "300mg/粒",
+                manufacturer: "普强" },
+            { name: "头孢地尼", category: "抗生素", tags: ["感染", "呼吸道"], dosage: "一次100mg，一日3次", spec: "100mg/粒",
+                manufacturer: "白云山" },
+            { name: "头孢呋辛酯", category: "抗生素", tags: ["感染", "呼吸道"], dosage: "一次250mg，一日2次", spec: "250mg/片",
+                manufacturer: "葛兰素史克" },
+            { name: "青霉素V钾", category: "抗生素", tags: ["感染", "咽炎"], dosage: "一次500mg，一日3次", spec: "0.5g/片",
+                manufacturer: "华北制药" },
+            { name: "头孢曲松", category: "抗生素", tags: ["感染", "重症"], dosage: "遵医嘱静脉滴注", spec: "1g/瓶",
+                manufacturer: "罗氏" },
+            { name: "哌拉西林", category: "抗生素", tags: ["感染", "重症"], dosage: "遵医嘱静脉滴注", spec: "2g/瓶",
+                manufacturer: "华北制药" },
+            { name: "万古霉素", category: "抗生素", tags: ["感染", "MRSA"], dosage: "遵医嘱静脉滴注", spec: "500mg/瓶",
+                manufacturer: "礼来" },
+            { name: "米诺环素", category: "抗生素", tags: ["痤疮、支原体感染"], dosage: "一次100mg，一日2次", spec: "100mg/粒",
+                manufacturer: "辉瑞" },
+            { name: "莫西沙星", category: "抗生素", tags: ["社区获得性肺炎"], dosage: "一次400mg，一日1次", spec: "400mg/片",
+                manufacturer: "拜耳" },
+            { name: "氨氯地平", category: "降压", tags: ["高血压", "降压"], dosage: "一次5mg，一日1次", spec: "5mg/片",
+                manufacturer: "辉瑞" },
+            { name: "厄贝沙坦", category: "降压", tags: ["高血压", "降压"], dosage: "一次150mg，一日1次", spec: "150mg/片",
+                manufacturer: "赛诺菲" },
+            { name: "倍他乐克", category: "降压", tags: ["高血压", "心绞痛"], dosage: "一次25mg，一日2次", spec: "25mg/片",
+                manufacturer: "阿斯利康" },
+            { name: "氢氯噻嗪", category: "降压", tags: ["高血压", "利尿"], dosage: "一次25mg，一日1次", spec: "25mg/片",
+                manufacturer: "上海信谊" },
+            { name: "硝苯地平", category: "降压", tags: ["高血压", "心绞痛"], dosage: "一次10mg，一日3次", spec: "10mg/片",
+                manufacturer: "拜耳" },
+            { name: "卡托普利", category: "降压", tags: ["高血压", "心力衰竭"], dosage: "一次12.5mg，一日3次", spec: "12.5mg/片",
+                manufacturer: "上海施贵宝" },
+            { name: "缬沙坦", category: "降压", tags: ["高血压", "心力衰竭"], dosage: "一次80mg，一日1次", spec: "80mg/片",
+                manufacturer: "诺华" },
+            { name: "氨氯地平贝那普利", category: "降压", tags: ["高血压"], dosage: "一次1片，一日1次", spec: "复方",
+                manufacturer: "北京诺华" },
+            { name: "阿托伐他汀", category: "降脂", tags: ["高血脂", "冠心病"], dosage: "一次10mg，一日1次", spec: "10mg/片",
+                manufacturer: "辉瑞" },
+            { name: "瑞舒伐他汀", category: "降脂", tags: ["高血脂", "冠心病"], dosage: "一次5mg，一日1次", spec: "5mg/片",
+                manufacturer: "阿斯利康" },
+            { name: "非诺贝特", category: "降脂", tags: ["高甘油三酯"], dosage: "一次200mg，一日1次", spec: "200mg/粒",
+                manufacturer: "雅培" },
+            { name: "依折麦布", category: "降脂", tags: ["高血脂"], dosage: "一次10mg，一日1次", spec: "10mg/片",
+                manufacturer: "默沙东" },
+            { name: "二甲双胍", category: "降糖", tags: ["糖尿病", "降糖"], dosage: "一次500mg，一日2次", spec: "0.5g/片",
+                manufacturer: "上海施贵宝" },
+            { name: "格列美脲", category: "降糖", tags: ["糖尿病", "降糖"], dosage: "一次1mg，一日1次", spec: "1mg/片",
+                manufacturer: "赛诺菲" },
+            { name: "阿卡波糖", category: "降糖", tags: ["糖尿病", "降糖"], dosage: "一次50mg，一日3次", spec: "50mg/片",
+                manufacturer: "拜耳" },
+            { name: "胰岛素", category: "降糖", tags: ["糖尿病", "注射"], dosage: "遵医嘱皮下注射", spec: "300U/支",
+                manufacturer: "诺和诺德" },
+            { name: "利拉鲁肽", category: "降糖", tags: ["糖尿病", "肥胖"], dosage: "一日0.6-1.8mg", spec: "18mg/支",
+                manufacturer: "诺和诺德" },
+            { name: "达格列净", category: "降糖", tags: ["糖尿病", "SGLT2"], dosage: "一次5mg，一日1次", spec: "5mg/片",
+                manufacturer: "阿斯利康" },
+            { name: "氨溴索", category: "止咳平喘", tags: ["咳嗽", "化痰"], dosage: "一次30mg，一日3次", spec: "30mg/片",
+                manufacturer: "勃林格殷格翰" },
+            { name: "右美沙芬", category: "止咳平喘", tags: ["干咳", "止咳"], dosage: "一次15mg，一日3次", spec: "15mg/片",
+                manufacturer: "强生" },
+            { name: "复方甘草片", category: "止咳平喘", tags: ["咳嗽", "化痰"], dosage: "一次2片，一日3次", spec: "复方",
+                manufacturer: "同仁堂" },
+            { name: "沙丁胺醇", category: "止咳平喘", tags: ["哮喘", "平喘"], dosage: "吸入，一次1-2喷", spec: "气雾剂",
+                manufacturer: "葛兰素史克" },
+            { name: "布地奈德", category: "止咳平喘", tags: ["哮喘", "吸入"], dosage: "吸入，一次1喷", spec: "雾化吸入",
+                manufacturer: "阿斯利康" },
+            { name: "孟鲁司特钠", category: "止咳平喘", tags: ["哮喘", "过敏"], dosage: "一次10mg，一日1次", spec: "10mg/片",
+                manufacturer: "默沙东" },
+            { name: "氯雷他定", category: "抗过敏", tags: ["过敏", "鼻炎", "瘙痒"], dosage: "一次10mg，一日1次", spec: "10mg/片",
+                manufacturer: "拜耳" },
+            { name: "西替利嗪", category: "抗过敏", tags: ["过敏", "鼻炎", "瘙痒"], dosage: "一次10mg，一日1次", spec: "10mg/片",
+                manufacturer: "辉瑞" },
+            { name: "依巴斯汀", category: "抗过敏", tags: ["过敏", "鼻炎"], dosage: "一次10mg，一日1次", spec: "10mg/片",
+                manufacturer: "阿尔法" },
+            { name: "左西替利嗪", category: "抗过敏", tags: ["过敏", "鼻炎"], dosage: "一次5mg，一日1次", spec: "5mg/片",
+                manufacturer: "UCB" },
+            { name: "地氯雷他定", category: "抗过敏", tags: ["过敏", "鼻炎"], dosage: "一次5mg，一日1次", spec: "5mg/片",
+                manufacturer: "默沙东" },
+            { name: "甲钴胺", category: "神经系统", tags: ["神经炎", "营养神经"], dosage: "一次0.5mg，一日3次", spec: "0.5mg/片",
+                manufacturer: "卫材" },
+            { name: "维生素B1", category: "神经系统", tags: ["神经炎", "营养"], dosage: "一次10mg，一日3次", spec: "10mg/片",
+                manufacturer: "华中药业" },
+            { name: "维生素B6", category: "神经系统", tags: ["神经炎", "营养"], dosage: "一次10mg，一日3次", spec: "10mg/片",
+                manufacturer: "华中药业" },
+            { name: "维生素B12", category: "神经系统", tags: ["神经炎", "营养"], dosage: "一次25μg，一日3次", spec: "25μg/片",
+                manufacturer: "华中药业" },
+            { name: "卡马西平", category: "神经系统", tags: ["癫痫", "三叉神经痛"], dosage: "一次100mg，一日2次", spec: "100mg/片",
+                manufacturer: "诺华" },
+            { name: "丙戊酸钠", category: "神经系统", tags: ["癫痫", "躁狂"], dosage: "一次200mg，一日2次", spec: "200mg/片",
+                manufacturer: "赛诺菲" },
+            { name: "华法林", category: "抗凝", tags: ["抗凝", "血栓"], dosage: "一次2.5mg，一日1次", spec: "2.5mg/片",
+                manufacturer: "上海信谊" },
+            { name: "利伐沙班", category: "抗凝", tags: ["抗凝", "血栓"], dosage: "一次15mg，一日1次", spec: "15mg/片",
+                manufacturer: "拜耳" },
+            { name: "低分子肝素", category: "抗凝", tags: ["抗凝", "血栓"], dosage: "遵医嘱皮下注射", spec: "4000IU/支",
+                manufacturer: "赛诺菲" },
+            { name: "氯吡格雷", category: "抗血小板", tags: ["抗血小板", "心梗"], dosage: "一次75mg，一日1次", spec: "75mg/片",
+                manufacturer: "赛诺菲" },
+            { name: "替格瑞洛", category: "抗血小板", tags: ["抗血小板", "心梗"], dosage: "一次90mg，一日2次", spec: "90mg/片",
+                manufacturer: "阿斯利康" },
+            { name: "玻璃酸钠滴眼液", category: "眼科", tags: ["干眼症", "润滑"], dosage: "一次1滴，一日3次", spec: "0.1%",
+                manufacturer: "参天制药" },
+            { name: "妥布霉素滴眼液", category: "眼科", tags: ["结膜炎", "抗感染"], dosage: "一次1滴，一日4次", spec: "0.3%",
+                manufacturer: "爱尔康" },
+            { name: "左氧氟沙星滴眼液", category: "眼科", tags: ["结膜炎", "抗感染"], dosage: "一次1滴，一日3次", spec: "0.5%",
+                manufacturer: "参天制药" },
+            { name: "噻吗洛尔滴眼液", category: "眼科", tags: ["青光眼", "降眼压"], dosage: "一次1滴，一日2次", spec: "0.25%",
+                manufacturer: "爱尔康" },
+            { name: "糠酸莫米松鼻喷剂", category: "耳鼻喉", tags: ["鼻炎", "鼻喷"], dosage: "一次1喷，一日2次", spec: "50μg/喷",
+                manufacturer: "默沙东" },
+            { name: "盐酸羟甲唑啉滴鼻液", category: "耳鼻喉", tags: ["鼻炎", "鼻塞"], dosage: "一次1-2滴，一日3次",
+                spec: "0.05%", manufacturer: "国药集团" },
+            { name: "复方薄荷脑滴鼻液", category: "耳鼻喉", tags: ["鼻炎", "鼻塞"], dosage: "一次1-2滴，一日3次",
+                spec: "复方", manufacturer: "上海信谊" },
+            { name: "丁酸氢化可的松乳膏", category: "皮肤科", tags: ["皮炎", "湿疹"], dosage: "外用，一日2次", spec: "0.1%",
+                manufacturer: "西安杨森" },
+            { name: "莫匹罗星软膏", category: "皮肤科", tags: ["感染", "脓疱疮"], dosage: "外用，一日3次", spec: "2%",
+                manufacturer: "葛兰素史克" },
+            { name: "酮康唑洗剂", category: "皮肤科", tags: ["头癣", "花斑癣"], dosage: "外用，每周2次", spec: "2%",
+                manufacturer: "西安杨森" },
+            { name: "维A酸乳膏", category: "皮肤科", tags: ["痤疮", "角质化"], dosage: "外用，一日1次", spec: "0.025%",
+                manufacturer: "重庆华邦" },
+            { name: "糠酸莫米松乳膏", category: "皮肤科", tags: ["皮炎", "湿疹"], dosage: "外用，一日1次", spec: "0.1%",
+                manufacturer: "默沙东" },
+            { name: "硝酸甘油", category: "急救", tags: ["心绞痛", "急救"], dosage: "舌下含服1片，可重复", spec: "0.5mg/片",
+                manufacturer: "上海信谊" },
+            { name: "硝普钠", category: "急救", tags: ["高血压危象"], dosage: "遵医嘱静脉滴注", spec: "50mg/支",
+                manufacturer: "北京双鹤" },
+            { name: "美托洛尔", category: "急救", tags: ["心梗", "高血压"], dosage: "一次5mg，缓慢静脉注射", spec: "5mg/支",
+                manufacturer: "阿斯利康" },
+            { name: "吗啡", category: "急救", tags: ["疼痛", "心梗", "镇痛"], dosage: "遵医嘱使用", spec: "10mg/支",
+                manufacturer: "青海制药" },
+            { name: "止血敏", category: "急救", tags: ["止血", "出血"], dosage: "遵医嘱使用", spec: "0.5g/支",
+                manufacturer: "上海信谊" },
+            { name: "丹参滴丸", category: "中成药", tags: ["冠心病", "心绞痛"], dosage: "一次10粒，一日3次", spec: "复方",
+                manufacturer: "天士力" },
+            { name: "速效救心丸", category: "中成药", tags: ["心绞痛", "急救"], dosage: "一次4-6粒，舌下含服", spec: "复方",
+                manufacturer: "中新药业" },
+            { name: "麝香保心丸", category: "中成药", tags: ["心绞痛", "急救"], dosage: "一次2粒，一日3次", spec: "复方",
+                manufacturer: "上海和黄" },
+            { name: "六味地黄丸", category: "中成药", tags: ["肾虚", "调养"], dosage: "一次8丸，一日3次", spec: "复方",
+                manufacturer: "同仁堂" },
+            { name: "知柏地黄丸", category: "中成药", tags: ["阴虚火旺"], dosage: "一次8丸，一日3次", spec: "复方",
+                manufacturer: "同仁堂" },
+            { name: "杞菊地黄丸", category: "中成药", tags: ["肝肾阴虚", "目眩"], dosage: "一次8丸，一日3次", spec: "复方",
+                manufacturer: "同仁堂" }
+        ];
+
+        // ============================================================
+        //  游戏状态 (保持原结构)
+        // ============================================================
+        let gameState = {
+            mode: null,
+            level: null,
+            visitType: 'initial',
+            selectedDisease: null,
+            selectedCategory: null,
+            diseaseData: null,
+            conversationHistory: [],
+            roundCount: 0,
+            diagnosisMade: false,
+            prescription: [],
+            reports: [],
+            requestedTests: [],
+            _systemPrompt: '',
+            _diseaseInfo: null,
+            gameStarted: false,
+            playerRole: '',
+            aiRole: '',
+            prescriptionSubmitted: false,
+        };
+
+        // ============================================================
+        //  屏幕管理 (原封不动)
+        // ============================================================
+        const screens = {
+            welcome: document.getElementById('welcome-screen'),
+            modeSelect: document.getElementById('mode-select'),
+            doctorDifficultySelect: document.getElementById('doctor-difficulty-select'),
+            patientDifficultySelect: document.getElementById('patient-difficulty-select'),
+            visitTypeSelect: document.getElementById('visit-type-select'),
+            doctorGameInfo: document.getElementById('doctor-game-info'),
+            patientGameInfo: document.getElementById('patient-game-info'),
+            gameScreen: document.getElementById('game-screen'),
+            resultScreen: document.getElementById('result-screen'),
+        };
+
+        function showScreen(id) {
+            Object.values(screens).forEach(el => el && el.classList.add('hidden'));
+            const target = screens[id];
+            if (target) {
+                target.classList.remove('hidden');
+                target.style.animation = 'none';
+                requestAnimationFrame(() => { target.style.animation = 'fadeIn 0.4s ease-in-out'; });
+            }
+        }
+
+        // ============================================================
+        //  工具函数 (原封不动)
+        // ============================================================
+        function pickRandom(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+
+        function getAllDiseasesForLevel(level) {
+            const result = [];
+            const cats = diseaseDatabase[level] || {};
+            for (const cat in cats) {
+                for (const d in cats[cat]) {
+                    result.push({ category: cat, disease: d, data: cats[cat][d] });
+                }
+            }
+            return result;
+        }
+
+        function selectRandomDisease(level) {
+            const all = getAllDiseasesForLevel(level);
+            if (all.length === 0) return null;
+            return pickRandom(all);
+        }
+
+        function getDiseaseData(level, category, disease) {
+            try { return diseaseDatabase[level][category][disease]; } catch (_) { return null; }
+        }
+
+        // ============================================================
+        //  AI对话 (原封不动)
+        // ============================================================
+        async function callAI(messages, systemPrompt = '') {
+            const apiKey = document.getElementById('api-key-input').value.trim() || CONFIG.API_KEY;
+            if (!apiKey) throw new Error('请先输入API密钥');
+
+            const full = [];
+            if (systemPrompt) full.push({ role: 'system', content: systemPrompt });
+            full.push(...messages);
+
+            const resp = await fetch(CONFIG.API_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
+                body: JSON.stringify({ model: CONFIG.MODEL, messages: full, temperature: 0.7, max_tokens: 512 })
+            });
+            if (!resp.ok) throw new Error(`API请求失败 (${resp.status})`);
+            const data = await resp.json();
+            return data.choices[0].message.content;
+        }
+
+        // ============================================================
+        //  游戏启动 (原封不动，只调整引用)
+        // ============================================================
+        function startGame(mode, level) {
+            const disease = selectRandomDisease(level);
+            if (!disease) { alert('该难度下暂无疾病数据'); return; }
+
+            gameState.mode = mode;
+            gameState.level = level;
+            gameState.selectedCategory = disease.category;
+            gameState.selectedDisease = disease.disease;
+            gameState.diseaseData = disease.data;
+            gameState.conversationHistory = [];
+            gameState.roundCount = 0;
+            gameState.diagnosisMade = false;
+            gameState.prescription = [];
+            gameState.reports = [];
+            gameState.requestedTests = [];
+            gameState.gameStarted = false;
+            gameState.prescriptionSubmitted = false;
+
+            gameState.visitType = document.getElementById('visit-type-select').dataset.visitType || 'initial';
+
+            if (mode === 'doctor') {
+                gameState.playerRole = '医生';
+                gameState.aiRole = '患者';
+                document.getElementById('player-role-label').textContent = '医生';
+                document.getElementById('game-mode-badge').textContent = '👨‍⚕️ 医生模式';
+                document.getElementById('game-mode-badge').className =
+                    'bg-primary/10 text-primary px-3 py-1 rounded-full text-sm';
+                document.getElementById('game-difficulty-badge').textContent = level;
+                document.getElementById('game-visit-badge').textContent = gameState.visitType === 'initial' ? '初诊' : '复诊';
+                document.getElementById('game-visit-badge').className =
+                    `visit-tag ${gameState.visitType === 'initial' ? 'initial' : 'followup'} ml-2`;
+
+                document.getElementById('doctor-disease-category').textContent = disease.category;
+                document.getElementById('doctor-difficulty-display').textContent = level;
+                document.getElementById('doctor-visit-display').textContent = gameState.visitType === 'initial' ? '初诊' :
+                    '复诊';
+
+                document.getElementById('doctor-tools').classList.remove('hidden');
+                document.getElementById('patient-ai-tools').classList.add('hidden');
+
+                const visitDesc = gameState.visitType === 'initial' ?
+                    '你是首次就诊，请详细描述你的症状，包括什么时候开始的、有多严重等。' :
+                    '你是复诊患者，请告诉医生上次就诊后的情况，症状是否有变化。';
+
+                const sysPrompt = `你扮演一位患有${disease.disease}的患者（${disease.category}）。
+                    症状包括：${disease.data.symptoms.join('、')}。
+                    ${visitDesc}
+                    回答要自然、口语化。如果医生要求检查，配合提供客观数据。
+                    不要主动说出疾病名称。`;
+
+                gameState._systemPrompt = sysPrompt;
+                gameState._diseaseInfo = disease;
+
+                showScreen('doctorGameInfo');
+                document.getElementById('start-doctor-game-btn').onclick = () => {
+                    initializeGameScreen();
+                    const msg = gameState.visitType === 'initial' ?
+                        `你好医生，我是第一次来看病。我最近感觉不太舒服，有些症状想让你帮我看看。` :
+                        `你好医生，我来复诊了。上次治疗后有些变化，想让你再看看。`;
+                    addChatMessage('ai', msg);
+                    gameState.gameStarted = true;
+                    document.getElementById('chat-input').disabled = false;
+                    document.getElementById('send-chat-btn').disabled = false;
+                    document.getElementById('diagnosis-btn').disabled = false;
+                    document.getElementById('hint-btn').disabled = false;
+                    document.getElementById('chat-input').focus();
+                };
+
+            } else {
+                gameState.playerRole = '患者';
+                gameState.aiRole = '医生';
+                document.getElementById('player-role-label').textContent = '患者';
+                document.getElementById('game-mode-badge').textContent = '🧑‍⚕️ 患者模式';
+                document.getElementById('game-mode-badge').className =
+                    'bg-secondary/10 text-secondary px-3 py-1 rounded-full text-sm';
+                document.getElementById('game-difficulty-badge').textContent = level;
+                document.getElementById('game-visit-badge').textContent = gameState.visitType === 'initial' ? '初诊' : '复诊';
+                document.getElementById('game-visit-badge').className =
+                    `visit-tag ${gameState.visitType === 'initial' ? 'initial' : 'followup'} ml-2`;
+
+                document.getElementById('patient-disease-name').textContent = disease.disease;
+                document.getElementById('patient-disease-category').textContent = disease.category;
+                document.getElementById('patient-difficulty-display').textContent = level;
+                document.getElementById('patient-visit-display').textContent = gameState.visitType === 'initial' ? '初诊' :
+                    '复诊';
+
+                document.getElementById('doctor-tools').classList.add('hidden');
+                document.getElementById('patient-ai-tools').classList.remove('hidden');
+
+                const visitDesc = gameState.visitType === 'initial' ?
+                    '你是首次接诊，请详细问诊，了解患者的病史和症状。' :
+                    '患者是复诊，请重点关注病情变化和治疗效果。';
+
+                const sysPrompt = `你是一位AI医生，正在为一位患者进行问诊。
+                    患者可能患有${disease.disease}（${disease.category}），典型症状包括${disease.data.symptoms.join('、')}。
+                    ${visitDesc}
+                    每次只问一个问题。不要直接说出疾病名。`;
+
+                gameState._systemPrompt = sysPrompt;
+                gameState._diseaseInfo = disease;
+
+                showScreen('patientGameInfo');
+                document.getElementById('start-patient-game-btn').onclick = () => {
+                    initializeGameScreen();
+                    setTimeout(() => { aiDoctorAsk(); }, 500);
+                    gameState.gameStarted = true;
+                    document.getElementById('chat-input').disabled = false;
+                    document.getElementById('send-chat-btn').disabled = false;
+                    document.getElementById('diagnosis-btn').disabled = true;
+                    document.getElementById('hint-btn').disabled = true;
+                    document.getElementById('chat-input').focus();
+                };
+            }
+
+            renderTestList('');
+            renderDrugList('');
+            updatePrescriptionUI();
+            setupQuickActions(mode);
+        }
+
+        // ============================================================
+        //  初始化游戏屏幕 (保持原结构，仅更新注释)
+        // ============================================================
+        function initializeGameScreen() {
+            showScreen('gameScreen');
+            document.getElementById('chat-messages').innerHTML = '';
+            document.getElementById('diagnosis-result').classList.add('hidden');
+            document.getElementById('prescription-area').classList.add('hidden');
+            document.getElementById('test-area').classList.add('hidden');
+            document.getElementById('report-display').classList.add('hidden');
+            document.getElementById('prescription-list').innerHTML = '';
+            gameState.prescription = [];
+            updatePrescriptionUI();
+            document.getElementById('game-round-counter').textContent = '对话回合: 0';
+
+            document.getElementById('send-chat-btn').onclick = sendUserMessage;
+            document.getElementById('chat-input').onkeydown = (e) => { if (e.key === 'Enter') sendUserMessage(); };
+
+            document.getElementById('diagnosis-btn').onclick = openDiagnosisModal;
+            document.getElementById('hint-btn').onclick = openHintModal;
+
+            document.getElementById('end-game-btn').onclick = () => {
+                if (confirm('确定要结束当前诊断吗？')) endGame(false, '游戏已提前结束');
+            };
+
+            document.getElementById('toggle-test-btn').onclick = () => {
+                const area = document.getElementById('test-area');
+                area.classList.toggle('hidden');
+                if (!area.classList.contains('hidden')) renderTestList(document.getElementById('test-search-input').value
+                .trim());
+            };
+            document.getElementById('test-search-btn').onclick = () => {
+                renderTestList(document.getElementById('test-search-input').value.trim());
+            };
+            document.getElementById('test-search-input').onkeydown = (e) => {
+                if (e.key === 'Enter') document.getElementById('test-search-btn').click();
+            };
+            document.getElementById('request-test-btn').onclick = requestTest;
+            document.getElementById('view-reports-btn').onclick = toggleReports;
+
+            document.getElementById('toggle-prescription-btn').onclick = () => {
+                const area = document.getElementById('prescription-area');
+                area.classList.toggle('hidden');
+                if (!area.classList.contains('hidden')) renderDrugList(document.getElementById('drug-search-input').value
+                .trim());
+            };
+            document.getElementById('drug-search-btn').onclick = () => {
+                renderDrugList(document.getElementById('drug-search-input').value.trim());
+            };
+            document.getElementById('drug-search-input').onkeydown = (e) => {
+                if (e.key === 'Enter') document.getElementById('drug-search-btn').click();
+            };
+            document.getElementById('clear-prescription-btn').onclick = clearPrescription;
+            document.getElementById('submit-prescription-btn').onclick = submitPrescription;
+
+            document.getElementById('back-to-main-menu-btn').onclick = () => showScreen('welcome');
+
+            document.getElementById('diagnosis-submit-btn').onclick = submitDiagnosis;
+            document.getElementById('diagnosis-cancel-btn').onclick = closeDiagnosisModal;
+            document.getElementById('diagnosis-hint-in-modal-btn').onclick = () => {
+                closeDiagnosisModal();
+                openHintModal();
+            };
+
+            document.getElementById('hint-continue-btn').onclick = closeHintModal;
+            document.getElementById('hint-diagnosis-btn').onclick = () => {
+                closeHintModal();
+                openDiagnosisModal();
+            };
+
+            document.getElementById('end-visit-confirm-btn').onclick = () => {
+                closeEndVisitModal();
+                openDiagnosisModal();
+            };
+            document.getElementById('end-visit-cancel-btn').onclick = closeEndVisitModal;
+        }
+
+        // ============================================================
+        //  快捷按钮 (原封不动)
+        // ============================================================
+        function setupQuickActions(mode) {
+            const container = document.getElementById('quick-actions');
+            container.innerHTML = '';
+            if (mode === 'doctor') {
+                ['🤔 哪里不舒服？', '📅 持续多久？', '🌡️ 有没有发烧？', '🤧 有咳嗽吗？', '📋 其他症状？', '🔬 需要检查'].forEach(t => {
+                    const btn = document.createElement('button');
+                    btn.className =
+                        'quick-action-btn bg-gray-100 hover:bg-gray-200 px-3 py-1.5 rounded-full text-sm transition-colors';
+                    btn.textContent = t;
+                    btn.onclick = () => { document.getElementById('chat-input').value = t.replace(/^.{1,2}\s/, '');
+                        sendUserMessage(); };
+                    container.appendChild(btn);
+                });
+            } else {
+                ['✅ 有', '❌ 没有', '🤷 不清楚', '🔥 严重', '💧 轻微', '📝 详细描述'].forEach(t => {
+                    const btn = document.createElement('button');
+                    btn.className =
+                        'quick-action-btn bg-gray-100 hover:bg-gray-200 px-3 py-1.5 rounded-full text-sm transition-colors';
+                    btn.textContent = t;
+                    btn.onclick = () => { document.getElementById('chat-input').value = t.replace(/^.{1,2}\s/, '');
+                        sendUserMessage(); };
+                    container.appendChild(btn);
+                });
+            }
+        }
+
+        // ============================================================
+        //  消息处理 (原封不动)
+        // ============================================================
+        function addChatMessage(role, content, extra = '') {
+            const container = document.getElementById('chat-messages');
+            const div = document.createElement('div');
+            div.className = 'flex items-start animate-fade-in';
+            const isAI = role === 'ai';
+            const icon = isAI ? 'fa-robot' : 'fa-user';
+            const color = isAI ? 'bg-primary' : 'bg-success';
+            const bubbleClass = isAI ? 'doctor-bubble' : 'patient-bubble';
+            div.innerHTML =
+                `<div class="w-10 h-10 rounded-full ${color} flex items-center justify-center text-white mr-3 flex-shrink-0"><i class="fa ${icon} text-lg"></i></div><div class="${bubbleClass} p-4 max-w-[80%]"><p>${content}</p>${extra ? `<p class="text-xs text-gray-400 mt-1">${extra}</p>` : ''}</div>`;
+            container.appendChild(div);
+            container.scrollTop = container.scrollHeight;
+            if (role === 'user' || role === 'ai') {
+                gameState.roundCount++;
+                document.getElementById('game-round-counter').textContent = `对话回合: ${gameState.roundCount}`;
+            }
+        }
+
+        async function sendUserMessage() {
+            const input = document.getElementById('chat-input');
+            const text = input.value.trim();
+            if (!text || !gameState.gameStarted || gameState.diagnosisMade) return;
+            input.value = '';
+            addChatMessage('user', text);
+            setInputEnabled(false);
+            try {
+                if (gameState.mode === 'doctor') {
+                    await aiPatientResponse(text);
+                } else {
+                    await aiDoctorResponse(text);
+                }
+            } catch (e) { addChatMessage('ai', `⚠️ ${e.message}`);
+                console.error(e); } finally { setInputEnabled(true);
+                document.getElementById('chat-input').focus(); }
+        }
+
+        function setInputEnabled(enabled) {
+            document.getElementById('chat-input').disabled = !enabled;
+            document.getElementById('send-chat-btn').disabled = !enabled;
+            document.getElementById('diagnosis-btn').disabled = !enabled || gameState.mode === 'patient';
+            document.getElementById('hint-btn').disabled = !enabled || gameState.mode === 'patient';
+            document.querySelectorAll('.quick-action-btn').forEach(b => {
+                b.style.opacity = enabled ? '1' : '0.5';
+                b.style.pointerEvents = enabled ? 'auto' : 'none';
+            });
+        }
+
+        // ============================================================
+        //  AI响应 (原封不动)
+        // ============================================================
+        async function aiPatientResponse(userMessage) {
+            addChatMessage('ai', '⏳ 患者正在思考...');
+            try {
+                const history = gameState.conversationHistory || [];
+                const msgs = [...history.map(h => ({ role: h.role === 'user' ? 'user' : 'assistant', content: h.content })),
+                    { role: 'user', content: userMessage }
+                ];
+                const resp = await callAI(msgs, gameState._systemPrompt);
+                const container = document.getElementById('chat-messages');
+                const last = container.lastElementChild;
+                if (last && last.textContent.includes('⏳ 患者正在思考')) last.remove();
+                addChatMessage('ai', resp);
+                gameState.conversationHistory.push({ role: 'user', content: userMessage });
+                gameState.conversationHistory.push({ role: 'assistant', content: resp });
+            } catch (e) {
+                const container = document.getElementById('chat-messages');
+                const last = container.lastElementChild;
+                if (last && last.textContent.includes('⏳ 患者正在思考')) last.remove();
+                addChatMessage('ai', `⚠️ ${e.message}`);
+                throw e;
+            }
+        }
+
+        async function aiDoctorAsk() {
+            if (gameState.diagnosisMade) return;
+            setInputEnabled(false);
+            try {
+                addChatMessage('ai', '⏳ AI医生正在思考...');
+                const history = gameState.conversationHistory || [];
+                let msgs;
+                if (history.length === 0) {
+                    const initPrompt =
+                        `你是一位AI医生。${gameState.visitType === 'initial' ? '患者首次就诊，请详细询问病史。' : '患者复诊，请关注病情变化。'}请提出第一个问题。`;
+                    msgs = [{ role: 'system', content: gameState._systemPrompt + '\n' + initPrompt },
+                    { role: 'user', content: '请开始问诊' }];
+                } else {
+                    msgs = [...history.map(h => ({ role: h.role === 'user' ? 'user' : 'assistant', content: h.content })),
+                    { role: 'user', content: '请继续问诊' }];
+                }
+                const resp = await callAI(msgs, gameState._systemPrompt);
+                const container = document.getElementById('chat-messages');
+                const last = container.lastElementChild;
+                if (last && last.textContent.includes('⏳ AI医生正在思考')) last.remove();
+                addChatMessage('ai', resp);
+                gameState.conversationHistory.push({ role: 'assistant', content: resp });
+                if (gameState.roundCount >= 6 && !gameState.diagnosisMade) await performAIDiagnosis();
+            } catch (e) {
+                const container = document.getElementById('chat-messages');
+                const last = container.lastElementChild;
+                if (last && last.textContent.includes('⏳ AI医生正在思考')) last.remove();
+                addChatMessage('ai', `⚠️ ${e.message}`);
+            } finally { setInputEnabled(true);
+                document.getElementById('chat-input').focus(); }
+        }
+
+        async function aiDoctorResponse(userMessage) {
+            setInputEnabled(false);
+            try {
+                addChatMessage('ai', '⏳ AI医生正在思考...');
+                const history = gameState.conversationHistory || [];
+                const msgs = [...history.map(h => ({ role: h.role === 'user' ? 'user' : 'assistant', content: h.content })),
+                    { role: 'user', content: userMessage }
+                ];
+                const resp = await callAI(msgs, gameState._systemPrompt);
+                const container = document.getElementById('chat-messages');
+                const last = container.lastElementChild;
+                if (last && last.textContent.includes('⏳ AI医生正在思考')) last.remove();
+                addChatMessage('ai', resp);
+                gameState.conversationHistory.push({ role: 'user', content: userMessage });
+                gameState.conversationHistory.push({ role: 'assistant', content: resp });
+                if (gameState.roundCount >= 6 && !gameState.diagnosisMade) {
+                    await performAIDiagnosis();
+                } else {
+                    setTimeout(() => { if (!gameState.diagnosisMade) aiDoctorAsk(); }, 1000);
+                }
+            } catch (e) {
+                const container = document.getElementById('chat-messages');
+                const last = container.lastElementChild;
+                if (last && last.textContent.includes('⏳ AI医生正在思考')) last.remove();
+                addChatMessage('ai', `⚠️ ${e.message}`);
+            } finally { setInputEnabled(true);
+                document.getElementById('chat-input').focus(); }
+        }
+
+        // ============================================================
+        //  诊断弹窗 (原封不动)
+        // ============================================================
+        function openDiagnosisModal() {
+            if (gameState.diagnosisMade || gameState.mode === 'patient') return;
+            document.getElementById('diagnosis-modal').classList.remove('hidden');
+            document.getElementById('diagnosis-input').value = '';
+            document.getElementById('diagnosis-input').focus();
+        }
+
+        function closeDiagnosisModal() {
+            document.getElementById('diagnosis-modal').classList.add('hidden');
+        }
+
+        function submitDiagnosis() {
+            const input = document.getElementById('diagnosis-input');
+            const disease = input.value.trim();
+            if (!disease) { alert('请输入疾病名称'); return; }
+            closeDiagnosisModal();
+            handleDoctorDiagnosis(`我诊断患者患有${disease}`);
+        }
+
+        // ============================================================
+        //  提示弹窗 (原封不动)
+        // ============================================================
+        async function openHintModal() {
+            if (gameState.diagnosisMade || gameState.mode === 'patient') return;
+            document.getElementById('hint-modal').classList.remove('hidden');
+            const content = document.getElementById('hint-content');
+            content.innerHTML = '<p class="text-gray-500">⏳ AI正在分析病情，请稍候...</p>';
+
+            try {
+                const history = gameState.conversationHistory || [];
+                const reports = gameState.reports.map(r => r.raw).join('\n');
+                const prompt =
+                    `根据对话${reports ? '和检查报告' : ''}，请给出3条诊断提示，帮助医生缩小诊断范围。
+                    格式：每条一行，以「•」开头。
+                    不要直接给出疾病名称，只给出方向性提示。`;
+
+                const msgs = [
+                    ...history.map(h => ({ role: h.role === 'user' ? 'user' : 'assistant', content: h.content })),
+                    { role: 'user', content: prompt }
+                ];
+                const resp = await callAI(msgs, '你是一位资深临床医生，请给出诊断提示。');
+                content.innerHTML = `<p class="text-gray-700 whitespace-pre-wrap">${resp}</p>`;
+            } catch (e) {
+                content.innerHTML =
+                    `<p class="text-gray-500">⚠️ 获取提示失败：${e.message}<br>请根据对话和检查报告自行判断。</p>`;
+            }
+        }
+
+        function closeHintModal() {
+            document.getElementById('hint-modal').classList.add('hidden');
+        }
+
+        // ============================================================
+        //  结束问诊弹窗 (原封不动)
+        // ============================================================
+        function openEndVisitModal() {
+            document.getElementById('end-visit-modal').classList.remove('hidden');
+        }
+
+        function closeEndVisitModal() {
+            document.getElementById('end-visit-modal').classList.add('hidden');
+        }
+
+        // ============================================================
+        //  诊断逻辑 (原封不动)
+        // ============================================================
+        async function handleDoctorDiagnosis(userMessage) {
+            if (gameState.diagnosisMade) return;
+            const diseaseName = gameState.selectedDisease;
+            const isCorrect = userMessage.includes(diseaseName) ||
+                userMessage.includes(diseaseName.replace(/\([^)]*\)/g, '').trim());
+
+            try {
+                const confirmPrompt =
+                    `患者说了："${userMessage}"。根据对话，患者是否应该确认诊断？如果提到了正确的疾病名请回答"是"，否则"否"。只回答"是"或"否"。`;
+                const msgs = [{ role: 'user', content: confirmPrompt }];
+                const resp = await callAI(msgs, '你是一位诚实的患者。');
+                const confirmed = resp.includes('是') || resp.includes('确认');
+                if (confirmed && isCorrect) {
+                    endGame(true, `🎉 诊断正确！患者确实患有「${diseaseName}」。`);
+                } else {
+                    endGame(false, `❌ 诊断错误。患者实际患有「${diseaseName}」。`);
+                }
+            } catch (e) {
+                if (isCorrect) {
+                    endGame(true, `🎉 诊断正确！患者确实患有「${diseaseName}」。`);
+                } else {
+                    endGame(false, `❌ 诊断错误。患者实际患有「${diseaseName}」。`);
+                }
+            }
+        }
+
+        async function performAIDiagnosis() {
+            if (gameState.diagnosisMade) return;
+            setInputEnabled(false);
+            try {
+                addChatMessage('ai', '⏳ AI医生正在综合分析...');
+                const history = gameState.conversationHistory || [];
+                const reportText = gameState.reports.map(r => r.raw).join('\n');
+                const prompt =
+                    `根据对话${reportText ? '和检查报告' : ''}，请判断患者最可能患有什么疾病？只回答疾病名称。`;
+                const msgs = [...history.map(h => ({ role: h.role === 'user' ? 'user' : 'assistant', content: h.content })),
+                    { role: 'user', content: prompt }
+                ];
+                const resp = await callAI(msgs, '你是一位专业的AI医生。');
+                const container = document.getElementById('chat-messages');
+                const last = container.lastElementChild;
+                if (last && last.textContent.includes('⏳ AI医生正在综合分析')) last.remove();
+                const actual = gameState.selectedDisease;
+                const correct = resp.includes(actual) ||
+                    actual.includes(resp.replace(/[^a-zA-Z\u4e00-\u9fa5]/g, '')) ||
+                    resp.includes(actual.replace(/\([^)]*\)/g, '').trim());
+                if (correct) {
+                    endGame(false, `🤖 AI医生诊断正确！它判断你患有「${actual}」。`);
+                } else {
+                    endGame(true, `🎉 AI医生诊断错误！它判断你患有「${resp}」，实际是「${actual}」。`);
+                }
+            } catch (e) {
+                console.error(e);
+                endGame(false, `🤖 AI医生判断：你可能患有「${gameState.selectedDisease}」。`);
+            } finally { setInputEnabled(true); }
+        }
+
+        // ============================================================
+        //  检查系统 (原封不动)
+        // ============================================================
+        function renderTestList(keyword = '') {
+            const container = document.getElementById('test-list');
+            container.innerHTML = '';
+            let filtered = testDatabase;
+            if (keyword.trim()) {
+                const kw = keyword.trim().toLowerCase();
+                filtered = testDatabase.filter(t => t.name.includes(kw) || t.category.includes(kw));
+            }
+            if (!filtered.length) { container.innerHTML = '<p class="text-gray-500 text-sm text-center py-2">无匹配项目</p>'; return; }
+            filtered.forEach(test => {
+                const div = document.createElement('div');
+                div.className =
+                    'test-item flex items-center justify-between px-3 py-1.5 rounded cursor-pointer hover:bg-gray-50 border-b border-gray-100';
+                div.innerHTML =
+                    `<div><span class="text-sm">${test.name}</span><span class="text-xs text-gray-400 ml-2">${test.category}</span></div>
+                    <button class="request-test-item text-primary hover:text-primary/80 text-xs font-medium px-2 py-0.5 rounded-full border border-primary/30 hover:bg-primary/10">申请</button>`;
+                div.querySelector('.request-test-item').onclick = (e) => {
+                    e.stopPropagation();
+                    requestSpecificTest(test);
+                };
+                container.appendChild(div);
+            });
+        }
+
+        async function requestSpecificTest(test) {
+            if (gameState.diagnosisMade) return;
+            if (gameState.requestedTests.includes(test.name)) {
+                addChatMessage('ai', `📋 已申请过「${test.name}」。`);
+                showReport(test.name);
+                return;
+            }
+            addChatMessage('user', `🔬 要求做「${test.name}」检查。`);
+            const report = await generateTestReport(test);
+            gameState.reports.push(report);
+            gameState.requestedTests.push(test.name);
+            showReport(test.name);
+            addChatMessage('ai', `📄 「${test.name}」报告已出。`);
+            if (gameState.mode === 'patient') {
+                setTimeout(() => { if (!gameState.diagnosisMade) aiDoctorAsk(); }, 1500);
+            }
+        }
+
+        async function generateTestReport(test) {
+            try {
+                const prompt =
+                    `为「${test.name}」生成客观检查报告。只提供结果数据和参考范围，不要分析。格式：
+                    检查项目：${test.name}
+                    结果：[数值或描述]
+                    参考范围：${test.normal || '见报告'}`;
+                const msgs = [{ role: 'user', content: prompt }];
+                const resp = await callAI(msgs, '你是检验科医生，只提供客观数据。');
+                return { test: test.name, raw: resp, generated: true, timestamp: new Date().toLocaleString() };
+            } catch (_) {
+                const mock = { "体温测量": "38.5°C", "血压测量": "145/92 mmHg", "血常规": "WBC 12.5×10⁹/L", "CRP": "45 mg/L",
+                    "D-二聚体": "1.8 mg/L", "胸部X光": "右下肺片状阴影", "心电图": "窦性心动过速" };
+                const result = mock[test.name] || '结果待查';
+                return {
+                    test: test.name,
+                    raw: `检查项目：${test.name}\n结果：${result}\n参考范围：${test.normal || '见报告'}`,
+                    generated: false,
+                    timestamp: new Date().toLocaleString()
+                };
+            }
+        }
+
+        function showReport(testName) {
+            const report = gameState.reports.find(r => r.test === testName);
+            if (!report) return;
+            const display = document.getElementById('report-display');
+            const content = document.getElementById('report-content');
+            display.classList.remove('hidden');
+
+            const test = testDatabase.find(t => t.name === testName);
+            const hint = test ? test.hint : '';
+
+            const lines = report.raw.split('\n').filter(l => l.trim());
+            let html = `<div class="text-xs text-gray-400 mb-1">📅 ${report.timestamp}</div>`;
+            html += lines.map(l => {
+                if (l.includes('结果：')) {
+                    const val = l.replace('结果：', '').trim();
+                    const abnormal = val.includes('>') || val.includes('偏高') || val.includes('异常') || val.includes('阳性');
+                    return `<div><span class="font-semibold">结果：</span><span class="${abnormal ? 'abnormal' : 'normal'}">${val}</span></div>`;
+                }
+                if (l.includes('参考范围：')) return `<div><span class="font-semibold">参考范围：</span>${l.replace('参考范围：', '')}</div>`;
+                return `<div>${l}</div>`;
+            }).join('');
+
+            if (hint) {
+                html += `<div class="hint-box">💡 <strong>解读：</strong>${hint}</div>`;
+            }
+
+            content.innerHTML = html;
+        }
+
+        function toggleReports() {
+            const display = document.getElementById('report-display');
+            if (!gameState.reports.length) { alert('暂无报告'); return; }
+            display.classList.toggle('hidden');
+            if (!display.classList.contains('hidden')) showReport(gameState.reports[gameState.reports.length - 1].test);
+        }
+
+        async function requestTest() {
+            const input = prompt('请输入检查项目名称（支持搜索）：\n' + testDatabase.map(t => t.name).join('、'), '血常规');
+            if (!input || !input.trim()) return;
+            const matched = testDatabase.filter(t => t.name.includes(input.trim()) || t.category.includes(input.trim()));
+            if (!matched.length) { alert('未找到匹配项目'); return; }
+            if (matched.length === 1) { await requestSpecificTest(matched[0]); return; }
+            const options = matched.map((t, i) => `${i+1}. ${t.name}`).join('\n');
+            const choice = prompt(`找到多个匹配：\n${options}`, '1');
+            const idx = parseInt(choice) - 1;
+            if (idx >= 0 && idx < matched.length) await requestSpecificTest(matched[idx]);
+        }
+
+        // ============================================================
+        //  处方系统 (原封不动)
+        // ============================================================
+        function renderDrugList(keyword = '') {
+            const container = document.getElementById('drug-list');
+            container.innerHTML = '';
+            let filtered = drugDatabase;
+            if (keyword.trim()) {
+                const kw = keyword.trim().toLowerCase();
+                filtered = drugDatabase.filter(d => d.name.includes(kw) || d.category.includes(kw) || d.tags.some(t => t
+                .includes(kw)));
+            }
+            if (!filtered.length) { container.innerHTML = '<p class="text-gray-500 text-sm text-center py-2">无匹配药物</p>'; return; }
+            filtered.forEach(drug => {
+                const div = document.createElement('div');
+                div.className =
+                    'drug-card bg-white border border-gray-200 rounded-lg p-2 flex items-center justify-between gap-2 hover:bg-gray-50';
+                div.innerHTML =
+                    `<div><p class="font-medium text-sm">${drug.name}</p><p class="text-xs text-gray-400">${drug.category} | ${drug.spec}</p></div>
+                    <div class="flex items-center gap-1">
+                        <input type="number" id="qty-${drug.name.replace(/\s/g,'')}" class="w-12 border border-gray-300 rounded px-1 py-0.5 text-sm text-center" value="1" min="1" max="100">
+                        <span class="text-xs text-gray-400">粒</span>
+                        <button class="add-drug-btn text-primary hover:text-primary/80 text-xs font-medium px-2 py-0.5 rounded-full border border-primary/30 hover:bg-primary/10" data-drug='${JSON.stringify(drug)}'>添加</button>
+                    </div>`;
+                div.querySelector('.add-drug-btn').onclick = (e) => {
+                    e.stopPropagation();
+                    const d = JSON.parse(e.target.dataset.drug);
+                    const q = parseInt(document.getElementById(`qty-${d.name.replace(/\s/g,'')}`).value) || 1;
+                    addDrugToPrescription(d, q);
+                };
+                container.appendChild(div);
+            });
+        }
+
+        function addDrugToPrescription(drug, qty) {
+            const exist = gameState.prescription.find(i => i.drug.name === drug.name);
+            if (exist) exist.quantity += qty;
+            else gameState.prescription.push({ drug, quantity: qty, unit: '粒' });
+            updatePrescriptionUI();
+            renderDrugList(document.getElementById('drug-search-input').value.trim());
+        }
+
+        function clearPrescription() {
+            if (!gameState.prescription.length) return;
+            if (confirm('清空处方？')) { gameState.prescription = [];
+                gameState.prescriptionSubmitted = false;
+                updatePrescriptionUI(); }
+        }
+
+        function updatePrescriptionUI() {
+            const container = document.getElementById('prescription-list');
+            container.innerHTML = '';
+            if (!gameState.prescription.length) {
+                container.innerHTML = '<span class="text-sm text-gray-400">暂无药物</span>';
+                document.getElementById('submit-prescription-btn').disabled = true;
+                return;
+            }
+            gameState.prescription.forEach((item, i) => {
+                const tag = document.createElement('span');
+                tag.className =
+                    'prescription-tag inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm bg-blue-50 text-blue-700 border border-blue-200';
+                tag.innerHTML =
+                    `${item.drug.name} × ${item.quantity}${item.unit||'粒'}
+                    <button class="remove-drug-btn text-blue-400 hover:text-red-500 ml-1" data-index="${i}"><i class="fa fa-times-circle"></i></button>`;
+                tag.querySelector('.remove-drug-btn').onclick = () => { gameState.prescription.splice(i, 1);
+                    gameState.prescriptionSubmitted = false;
+                    updatePrescriptionUI(); };
+                container.appendChild(tag);
+            });
+            document.getElementById('submit-prescription-btn').disabled = false;
+        }
+
+        function submitPrescription() {
+            if (!gameState.prescription.length) { alert('请先添加药物'); return; }
+            if (gameState.diagnosisMade) { alert('诊断已完成'); return; }
+
+            const list = gameState.prescription.map(i => `${i.drug.name} × ${i.quantity}${i.unit||'粒'}`).join('、');
+            addChatMessage('user', `💊 处方：${list}`);
+            addChatMessage('ai', `✅ 收到处方：${list}。已记录到病历。`);
+
+            gameState.prescriptionSubmitted = true;
+            openEndVisitModal();
+        }
+
+        // ============================================================
+        //  结束游戏 (原封不动)
+        // ============================================================
+        function endGame(win, message) {
+            if (gameState.diagnosisMade) return;
+            gameState.diagnosisMade = true;
+            const disease = gameState.selectedDisease;
+            const cat = gameState.selectedCategory;
+            const data = gameState.diseaseData;
+            let details =
+                `<p><strong>实际疾病：</strong> ${disease}（${cat}）</p>
+                <p><strong>症状：</strong> ${data ? data.symptoms.join('、') : '未知'}</p>
+                <p><strong>推荐用药：</strong> ${data && data.drugs ? data.drugs.join('、') : '建议就医'}</p>`;
+            if (gameState.reports.length) {
+                details +=
+                    `<p><strong>检查报告：</strong> ${gameState.reports.map(r => r.test).join('、')}</p>`;
+            }
+            if (gameState.prescription.length) {
+                details +=
+                    `<p><strong>你的处方：</strong> ${gameState.prescription.map(i => `${i.drug.name}×${i.quantity}`).join('、')}</p>`;
+            }
+            const icon = document.getElementById('result-icon');
+            const title = document.getElementById('result-title');
+            const msg = document.getElementById('result-message');
+            const det = document.getElementById('result-details');
+            if (win) {
+                icon.className = 'w-24 h-24 rounded-full bg-success/10 flex items-center justify-center mx-auto mb-6';
+                icon.innerHTML = '<i class="fa fa-trophy text-5xl text-success"></i>';
+                title.className = 'text-3xl font-bold mb-4 text-success';
+                title.textContent = '🎉 诊断成功！';
+            } else {
+                icon.className = 'w-24 h-24 rounded-full bg-danger/10 flex items-center justify-center mx-auto mb-6';
+                icon.innerHTML = '<i class="fa fa-robot text-5xl text-danger"></i>';
+                title.className = 'text-3xl font-bold mb-4 text-danger';
+                title.textContent = '😓 诊断失败';
+            }
+            msg.textContent = message;
+            det.innerHTML = details;
+            setInputEnabled(false);
+            document.getElementById('chat-input').disabled = true;
+            document.getElementById('send-chat-btn').disabled = true;
+            document.getElementById('diagnosis-btn').disabled = true;
+            document.getElementById('hint-btn').disabled = true;
+            showScreen('resultScreen');
+            try {
+                const hist = JSON.parse(localStorage.getItem('gameHistory_v2') || '[]');
+                hist.push({ mode: gameState.mode, level: gameState.level, disease, visitType: gameState.visitType,
+                    result: win ? 'win' : 'lose', timestamp: Date.now(), rounds: gameState.roundCount });
+                if (hist.length > 50) hist.shift();
+                localStorage.setItem('gameHistory_v2', JSON.stringify(hist));
+            } catch (_) {}
+        }
+
+        // ============================================================
+        //  导航 (原封不动)
+        // ============================================================
+        function initNavigation() {
+            document.getElementById('start-btn').onclick = () => {
+                const key = document.getElementById('api-key-input').value.trim();
+                if (!key) { alert('⚠️ 请先输入API密钥'); return; }
+                CONFIG.API_KEY = key;
+                showScreen('modeSelect');
+            };
+            document.getElementById('doctor-mode-btn').onclick = () => showScreen('doctorDifficultySelect');
+            document.getElementById('patient-mode-btn').onclick = () => showScreen('patientDifficultySelect');
+            document.getElementById('back-from-mode-btn').onclick = () => showScreen('welcome');
+
+            document.querySelectorAll('.difficulty-btn').forEach(btn => {
+                btn.onclick = () => {
+                    document.getElementById('visit-type-select').dataset.mode = btn.dataset.mode;
+                    document.getElementById('visit-type-select').dataset.level = btn.dataset.level;
+                    showScreen('visitTypeSelect');
+                };
+            });
+
+            document.getElementById('initial-visit-btn').onclick = () => {
+                document.getElementById('visit-type-select').dataset.visitType = 'initial';
+                const mode = document.getElementById('visit-type-select').dataset.mode;
+                const level = document.getElementById('visit-type-select').dataset.level;
+                startGame(mode, level);
+            };
+            document.getElementById('followup-visit-btn').onclick = () => {
+                document.getElementById('visit-type-select').dataset.visitType = 'followup';
+                const mode = document.getElementById('visit-type-select').dataset.mode;
+                const level = document.getElementById('visit-type-select').dataset.level;
+                startGame(mode, level);
+            };
+            document.getElementById('back-to-difficulty-btn').onclick = () => {
+                const mode = document.getElementById('visit-type-select').dataset.mode;
+                showScreen(mode === 'doctor' ? 'doctorDifficultySelect' : 'patientDifficultySelect');
+            };
+
+            document.getElementById('back-to-mode-from-doctor-difficulty-btn').onclick = () => showScreen('modeSelect');
+            document.getElementById('back-to-mode-from-patient-difficulty-btn').onclick = () => showScreen('modeSelect');
+
+            document.getElementById('play-again-btn').onclick = () => {
+                showScreen(gameState.mode === 'doctor' ? 'doctorDifficultySelect' : 'patientDifficultySelect');
+            };
+            document.getElementById('back-to-main-from-result-btn').onclick = () => showScreen('welcome');
+
+            document.getElementById('diagnosis-modal').onclick = (e) => { if (e.target === e.currentTarget)
+                closeDiagnosisModal(); };
+            document.getElementById('hint-modal').onclick = (e) => { if (e.target === e.currentTarget) closeHintModal(); };
+            document.getElementById('end-visit-modal').onclick = (e) => { if (e.target === e.currentTarget)
+                closeEndVisitModal(); };
+
+            document.getElementById('diagnosis-input').addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') document.getElementById('diagnosis-submit-btn').click();
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            initNavigation();
+            showScreen('welcome');
+            console.log('🎮 专业AI医生诊断游戏 v2.6 加量版已加载');
+            console.log(`🔬 检查项目: ${testDatabase.length} 项`);
+            console.log(`💊 药品: ${drugDatabase.length} 种`);
+        });
+    </script>
+</body>
+</html>
